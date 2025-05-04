@@ -1,18 +1,27 @@
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { View, Text, TextInput, Button, FlatList, Image, Alert, TouchableOpacity } from 'react-native';
-import { useAuthStore } from '../../store/authStore';
-import { useLibraryStore } from '../../store/libraryStore';
-import { addBookToLibrary } from '../../lib/apiClient'; 
-import { searchBooksByTitle } from '../../lib/apiClient'; 
+import { View, Text, TextInput, FlatList, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { useAppStore } from '../../store/store';
+import { addBookToLibrary, searchBooksByTitle } from '../../lib/api';
 import Toast from 'react-native-toast-message';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+interface Book {
+  title: string;
+  isbn13: string;
+  authors: string[];
+  pages?: number;
+  image: string;
+  excerpt?: string;
+  synopsis?: string;
+}
 
 export default function AddBookPage() {
-  const token = useAuthStore((state) => state.token);
+  const token = useAppStore((state) => state.token);
   const router = useRouter();
-  const setNeedsRefresh = useLibraryStore((state) => state.setNeedsRefresh);
+  const setNeedsRefresh = useAppStore((state) => state.setNeedsRefresh);
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<any[]>([]);
+  const [results, setResults] = useState<Book[]>([]);
   const [loading, setLoading] = useState(false);
 
   const handleSearch = async () => {
@@ -20,18 +29,18 @@ export default function AddBookPage() {
       setLoading(true);
       const books = await searchBooksByTitle(query);
       setResults(books);
-    } catch (err) {
+    } catch {
       Toast.show({
         type: 'error',
-        text1: 'Error',
-        text2: 'Something went wrong. Please try again.',
+        text1: 'Search failed',
+        text2: 'Could not fetch books. Please check your connection.',
       });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAddBook = async (book: any) => {
+  const handleAddBook = async (book: Book) => {
     try {
       await addBookToLibrary(
         {
@@ -53,43 +62,56 @@ export default function AddBookPage() {
       });
       setNeedsRefresh(true);
       router.replace('/(home)/books');
-    } catch (err) {
+    } catch {
       Toast.show({
         type: 'error',
-        text1: 'Error',
-        text2: 'Something went wrong. Please try again.',
+        text1: 'Add failed',
+        text2: 'Unable to add book. Try again.',
       });
     }
   };
 
   return (
-    <View className="flex-1 p-4">
-      <Text className="text-xl font-bold mb-2">Search Books</Text>
-      <TextInput
-        className="border p-2 mb-2"
-        placeholder="Enter title or ISBN"
-        value={query}
-        onChangeText={setQuery}
-      />
-      <Button title={loading ? 'Searching...' : 'Search'} onPress={handleSearch} disabled={loading} />
+    <SafeAreaView className="flex-1 px-4 py-6 bg-white dark:bg-gray-900">
+      <Text className="text-xl font-bold text-gray-900 dark:text-white mb-3">Search Books</Text>
+      <View className="flex-row items-center mb-4">
+        <TextInput
+          className="flex-1 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-2 rounded-lg mr-2"
+          placeholder="Enter title or ISBN"
+          placeholderTextColor="#9ca3af"
+          value={query}
+          onChangeText={setQuery}
+        />
+        <TouchableOpacity
+          onPress={handleSearch}
+          disabled={loading}
+          className={`px-4 py-2 rounded-lg ${loading ? 'bg-indigo-400' : 'bg-indigo-600'}`}
+        >
+          {loading ? (
+            <ActivityIndicator size="small" color="white" />
+          ) : (
+            <Text className="text-white font-medium">Search</Text>
+          )}
+        </TouchableOpacity>
+      </View>
 
       <FlatList
         data={results}
         keyExtractor={(item) => item.isbn13}
-        className="mt-4"
+        className="mt-2"
         renderItem={({ item }) => (
-          <View className="flex-row items-center mb-4 border p-2 rounded">
+          <View className="flex-row items-center mb-4 bg-white dark:bg-gray-800 p-3 rounded-xl shadow-sm">
             <Image source={{ uri: item.image }} style={{ width: 50, height: 75, marginRight: 10 }} />
             <View className="flex-1">
-              <Text className="font-semibold">{item.title}</Text>
-              <Text className="text-sm text-gray-500">{item.authors?.join(', ')}</Text>
+              <Text className="font-semibold text-gray-900 dark:text-white">{item.title}</Text>
+              <Text className="text-sm text-gray-500 dark:text-gray-400">{item.authors?.join(', ')}</Text>
             </View>
-            <TouchableOpacity onPress={() => handleAddBook(item)} className="bg-blue-700 px-3 py-2 rounded">
+            <TouchableOpacity onPress={() => handleAddBook(item)} className="bg-indigo-600 px-3 py-2 rounded">
               <Text className="text-white text-sm">Add</Text>
             </TouchableOpacity>
           </View>
         )}
       />
-    </View>
+    </SafeAreaView>
   );
 }

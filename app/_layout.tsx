@@ -1,5 +1,6 @@
 import { Slot, useRouter, useSegments } from 'expo-router';
-import { useAuthStore } from '../store/authStore';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { useAppStore } from '../store/store';
 import { useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { View, ActivityIndicator } from 'react-native'
@@ -7,7 +8,7 @@ import Toast from 'react-native-toast-message';
 import '../global.css';
 
 export default function Layout() {
-  const { login, isAuthenticated } = useAuthStore();
+  const { login, isAuthenticated } = useAppStore();
   const segments = useSegments();
   const router = useRouter();
   const [isReady, setIsReady] = useState(false);
@@ -43,9 +44,9 @@ export default function Layout() {
   }
 
   return(
-    <>
+    <SafeAreaProvider>
       <Slot />
       <Toast />
-    </>
+    </SafeAreaProvider>
   );
 }

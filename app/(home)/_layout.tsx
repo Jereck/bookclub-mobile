@@ -1,128 +1,99 @@
-import { Tabs } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { View, Text, StyleSheet, Platform, Pressable, Animated } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import React, { useRef } from 'react';
+import { Tabs } from "expo-router"
+import { View, Text, Pressable } from "react-native"
+import type { BottomTabBarProps } from "@react-navigation/bottom-tabs"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { Feather } from "@expo/vector-icons"
+import type React from "react"
 
-const COLORS = {
-  paper: '#f8f5e6',
-  leather: '#8b4513',
-  gold: '#d4af37',
-  ink: '#1a1a1a',
-  bookmark: '#b22222',
-  pageEdge: '#e8e6d9',
-};
+// Define types for the tab routes and navigation
+type TabRouteName = "index" | "club" | "add" | "books" | "profile"
 
-const TabButton = ({ isFocused, onPress, label, iconName, isAddButton = false }) => {
-  const scaleAnim = useRef(new Animated.Value(1)).current;
+interface TabButtonProps {
+  isFocused: boolean
+  onPress: () => void
+  label?: string
+  iconName: string
+  isAddButton?: boolean
+}
 
-  const handlePressIn = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 0.92,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  const handlePressOut = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 1,
-      friction: 4,
-      useNativeDriver: true,
-    }).start();
-  };
-
+// Define the TabButton component
+const TabButton: React.FC<TabButtonProps> = ({ isFocused, onPress, label, iconName, isAddButton = false }) => {
+  // For the add button, we'll use a special design
   if (isAddButton) {
     return (
       <Pressable
         onPress={onPress}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        style={styles.addButtonContainer}
+        className={`items-center justify-center w-12 h-12 rounded-full bg-indigo-600 shadow-md absolute -top-6 self-center`}
       >
-        <Animated.View
-          style={[styles.addButton, { transform: [{ scale: scaleAnim }] }]}
-        >
-          <View style={styles.bookmarkTail} />
-          <View style={styles.bookmarkHead}>
-            <Ionicons name="add" size={28} color="white" />
-          </View>
-        </Animated.View>
+        <Feather name="plus" size={24} color="white" />
       </Pressable>
-    );
+    )
   }
 
+  // For regular tab buttons
   return (
-    <Pressable
-      onPress={onPress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      style={styles.tabButton}
-    >
-      <Animated.View
-        style={[
-          styles.tabContent,
-          isFocused ? styles.activeTab : styles.inactiveTab,
-          { transform: [{ scale: scaleAnim }] },
-        ]}
-      >
-        <Ionicons
-          name={isFocused ? iconName : `${iconName}-outline`}
-          size={22}
-          color={isFocused ? COLORS.gold : COLORS.ink}
-        />
-        <Text
-          style={[
-            styles.tabLabel,
-            { color: isFocused ? COLORS.gold : COLORS.ink },
-          ]}
-        >
-          {label}
-        </Text>
-        {isFocused && (
-          <>
-            <View style={styles.spineDecoration} />
-            <View style={[styles.spineDecoration, { bottom: '30%' }]} />
-          </>
-        )}
-      </Animated.View>
+    <Pressable onPress={onPress} className="flex-1 items-center justify-center py-2">
+      <View className={`items-center justify-center`}>
+        <Feather name={iconName as keyof typeof Feather.glyphMap} size={20} color={isFocused ? "#4f46e5" : "#6b7280"} />
+        <Text className={`text-xs mt-1 ${isFocused ? "text-indigo-600 font-medium" : "text-gray-500"}`}>{label}</Text>
+        {isFocused && <View className="absolute -bottom-2 w-1.5 h-1.5 rounded-full bg-indigo-600" />}
+      </View>
     </Pressable>
-  );
-};
+  )
+}
+
+// Map route names to icon names
+const getIconName = (routeName: TabRouteName): keyof typeof Feather.glyphMap => {
+  switch (routeName) {
+    case "index":
+      return "home"
+    case "club":
+      return "users"
+    case "books":
+      return "book"
+    case "profile":
+      return "user"
+    default:
+      return "circle"
+  }
+}
 
 export default function AppTabsLayout() {
-  const insets = useSafeAreaInsets();
+  const insets = useSafeAreaInsets()
 
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          display: 'none',
+          display: "none",
         },
       }}
-      tabBar={({ state, descriptors, navigation }) => {
-        const routes = state.routes.filter((r) => r.name !== 'add');
-        const midpoint = Math.floor(routes.length / 2);
-        const leftTabs = routes.slice(0, midpoint);
-        const rightTabs = routes.slice(midpoint);
+      tabBar={({
+        state,
+        descriptors,
+        navigation,
+      }: BottomTabBarProps) => {
+        // Filter out the add tab from regular tabs
+        const routes = state.routes.filter((r) => r.name !== "add")
+
+        // Get the midpoint to place the add button
+        const midpoint = Math.floor(routes.length / 2)
+        const leftTabs = routes.slice(0, midpoint)
+        const rightTabs = routes.slice(midpoint)
 
         return (
           <View
-            style={[
-              styles.customTabBar,
-              { paddingBottom: insets.bottom > 0 ? insets.bottom : 10 },
-            ]}
+            className={`absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-sm`}
+            style={{ paddingBottom: insets.bottom > 0 ? insets.bottom : 10 }}
           >
-            <View style={styles.bookshelfShadow} />
-            <View style={styles.tabsContainer}>
-              {leftTabs.map((route, index) => {
-                const { options } = descriptors[route.key];
-                const label = options.title || route.name;
-                const isFocused = state.index === state.routes.findIndex(r => r.name === route.name);
-                const iconName = route.name === 'index' ? 'home'
-                  : route.name === 'club' ? 'people'
-                  : route.name === 'books' ? 'book'
-                  : 'person';
+            <View className="flex-row relative">
+              {/* Left tabs */}
+              {leftTabs.map((route) => {
+                const { options } = descriptors[route.key]
+                const label = options.title || route.name
+                const isFocused = state.index === state.routes.findIndex((r) => r.name === route.name)
+                const iconName = getIconName(route.name as TabRouteName)
 
                 return (
                   <TabButton
@@ -132,19 +103,18 @@ export default function AppTabsLayout() {
                     label={label}
                     iconName={iconName}
                   />
-                );
+                )
               })}
 
-              <View style={{ width: 64 }} />
+              {/* Space for add button */}
+              <View className="w-12" />
 
-              {rightTabs.map((route, index) => {
-                const { options } = descriptors[route.key];
-                const label = options.title || route.name;
-                const isFocused = state.index === state.routes.findIndex(r => r.name === route.name);
-                const iconName = route.name === 'index' ? 'home'
-                  : route.name === 'club' ? 'people'
-                  : route.name === 'books' ? 'book'
-                  : 'person';
+              {/* Right tabs */}
+              {rightTabs.map((route) => {
+                const { options } = descriptors[route.key]
+                const label = options.title || route.name
+                const isFocused = state.index === state.routes.findIndex((r) => r.name === route.name)
+                const iconName = getIconName(route.name as TabRouteName)
 
                 return (
                   <TabButton
@@ -154,138 +124,27 @@ export default function AppTabsLayout() {
                     label={label}
                     iconName={iconName}
                   />
-                );
+                )
               })}
             </View>
+
+            {/* Add button */}
             <TabButton
-              isFocused={state.index === state.routes.findIndex(r => r.name === 'add')}
-              onPress={() => navigation.navigate('add')}
-              iconName="add"
+              isFocused={state.index === state.routes.findIndex((r) => r.name === "add")}
+              onPress={() => navigation.navigate("add")}
               isAddButton
+              iconName="plus"
+              label=""
             />
           </View>
-        );
+        )
       }}
     >
-      <Tabs.Screen name="index" options={{ title: 'Home' }} />
-      <Tabs.Screen name="club" options={{ title: 'Club' }} />
-      <Tabs.Screen name="add" options={{ title: '' }} />
-      <Tabs.Screen name="books" options={{ title: 'Books' }} />
-      <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
+      <Tabs.Screen name="index" options={{ title: "Home" }} />
+      <Tabs.Screen name="club" options={{ title: "Club" }} />
+      <Tabs.Screen name="add" options={{ title: "" }} />
+      <Tabs.Screen name="books" options={{ title: "Books" }} />
+      <Tabs.Screen name="profile" options={{ title: "Profile" }} />
     </Tabs>
-  );
+  )
 }
-
-const styles = StyleSheet.create({
-  customTabBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: 'transparent',
-  },
-  bookshelfShadow: {
-    position: 'absolute',
-    bottom: 0,
-    left: 10,
-    right: 10,
-    height: 15,
-    backgroundColor: 'rgba(0,0,0,0.2)',
-    borderBottomLeftRadius: 5,
-    borderBottomRightRadius: 5,
-    zIndex: -1,
-  },
-  tabsContainer: {
-    flexDirection: 'row',
-    marginHorizontal: 10,
-    height: 75,
-    backgroundColor: COLORS.leather,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 5,
-    elevation: 10,
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    paddingHorizontal: 4,
-  },
-  tabButton: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  tabContent: {
-    width: '80%',
-    height: '90%',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 4,
-    paddingVertical: 8,
-  },
-  activeTab: {
-    backgroundColor: COLORS.paper,
-    borderLeftWidth: 1,
-    borderRightWidth: 1,
-    borderColor: COLORS.pageEdge,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-    elevation: 3,
-  },
-  inactiveTab: {
-    backgroundColor: COLORS.paper,
-    opacity: 0.7,
-  },
-  tabLabel: {
-    marginTop: 4,
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  spineDecoration: {
-    position: 'absolute',
-    right: 0,
-    top: '20%',
-    width: 3,
-    height: 20,
-    backgroundColor: COLORS.gold,
-  },
-  addButtonContainer: {
-    position: 'absolute',
-    bottom: 35,
-    alignSelf: 'center',
-    zIndex: 10,
-  },
-  addButton: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  bookmarkHead: {
-    width: 64,
-    height: 64,
-    backgroundColor: COLORS.bookmark,
-    borderRadius: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 8,
-    borderWidth: 2,
-    borderColor: COLORS.gold,
-    zIndex: 11,
-  },
-  bookmarkTail: {
-    position: 'absolute',
-    bottom: -12,
-    width: 20,
-    height: 30,
-    backgroundColor: COLORS.bookmark,
-    borderBottomLeftRadius: 10,
-    borderBottomRightRadius: 10,
-    transform: [{ translateY: -5 }],
-    zIndex: 10,
-  },
-});

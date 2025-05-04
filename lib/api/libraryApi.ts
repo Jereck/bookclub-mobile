@@ -1,50 +1,19 @@
 const apiURL = process.env.EXPO_PUBLIC_API_URL;
 const isbnApiKey = process.env.EXPO_PUBLIC_ISBNDB_API_KEY;
 
-export const loginUser = async (email: string, password: string) => {
-  const response = await fetch(`${apiURL}/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password })
-  });
-
-  if (!response.ok) {
-    throw new Error('Login failed');
-  }
-
-  const data = await response.json();
-  return  {token: data.token, user: data.user };
-};
-
-export const registerUser = async (email: string, password: string) => {
-  const response = await fetch(`${apiURL}/auth/register`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password })
-  });
-
-  if (!response.ok) {
-    throw new Error('Registration failed');
-  }
-
-  return await response.json();
-};
-
-
-export const searchBooksByTitle = async (title: string) => {
-  const response = await fetch(`https://api2.isbndb.com/books/${encodeURIComponent(title)}`, {
+export const getUserLibrary = async (token: string) => {
+  const response = await fetch(`${apiURL}/library`, {
     headers: {
-      Authorization: isbnApiKey!,
+      Authorization: `Bearer ${token}`,
     },
   });
 
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`ISBNdb Error: ${response.status} - ${errorText}`);
+    throw new Error('Failed to fetch library');
   }
 
   const data = await response.json();
-  return data.books;
+  return data;
 };
 
 export const addBookToLibrary = async (
@@ -77,19 +46,20 @@ export const addBookToLibrary = async (
   return await response.json();
 };
 
-export const getUserLibrary = async (token: string) => {
-  const response = await fetch(`${apiURL}/library`, {
+export const searchBooksByTitle = async (title: string) => {
+  const response = await fetch(`https://api2.isbndb.com/books/${encodeURIComponent(title)}`, {
     headers: {
-      Authorization: `Bearer ${token}`,
+      Authorization: isbnApiKey!,
     },
   });
 
   if (!response.ok) {
-    throw new Error('Failed to fetch library');
+    const errorText = await response.text();
+    throw new Error(`ISBNdb Error: ${response.status} - ${errorText}`);
   }
 
   const data = await response.json();
-  return data; // expected to be an array of books
+  return data.books;
 };
 
 export const getBookFromLibrary = async (bookId: number, token: string) => {
