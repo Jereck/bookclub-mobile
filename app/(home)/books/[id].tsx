@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import RenderHTML from "react-native-render-html"
 import { useLocalSearchParams, useRouter } from "expo-router"
 import { useEffect, useState, useCallback } from "react"
@@ -142,7 +143,6 @@ export default function BookDetail() {
       setEntry(entry)
       setCurrentPage(entry.currentPage.toString())
       setBook(entry.book)
-      console.log("Book entry loaded:", entry.book)
     } catch (err) {
       Alert.alert("Error", (err as Error).message)
     } finally {
