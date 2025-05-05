@@ -9,6 +9,11 @@ import { useCallback, useState } from "react"
 import { getBookRecommendations, getCurrentlyReadingBooks } from "../../lib/api"
 import type { BookshelfEntry } from "../../lib/api/types"
 import { LinearGradient } from "expo-linear-gradient"
+import { format } from 'date-fns';
+
+const today = new Date();
+const currentDay = today.getDate();
+const totalDaysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
 
 const { width } = Dimensions.get("window")
 
@@ -84,16 +89,19 @@ export default function HomeTab() {
             </Pressable>
           </View>
 
+          {/* READING GOAL ITEM */}
           <View className="bg-white/10 backdrop-blur-lg p-4 rounded-xl">
             <View className="flex-row justify-between items-center mb-2">
               <Text className="text-white font-bold">Your Reading Goal</Text>
-              <Text className="text-indigo-100 text-xs">12 of 30 days</Text>
+              <Text className="text-indigo-100 text-xs">{currentDay} of {totalDaysInMonth} days</Text>
             </View>
             <View className="w-full h-2.5 bg-white/20 rounded-full">
-              <View className="h-2.5 bg-white rounded-full" style={{ width: "40%" }} />
+              <View className="h-2.5 bg-white rounded-full" style={{ width: `${(currentDay / totalDaysInMonth) * 100}%` }} />
             </View>
-            <Text className="text-indigo-100 text-xs mt-2">You're on a 12-day streak! Keep it up!</Text>
+            {/* <Text className="text-indigo-100 text-xs mt-2">You're on a 12-day streak! Keep it up!</Text> */}
+            <Text className="text-indigo-100 text-xs mt-2">Keep up the work!</Text>
           </View>
+
         </LinearGradient>
 
         {/* Quick Actions */}
@@ -182,30 +190,40 @@ export default function HomeTab() {
             </Pressable>
           </View>
 
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 20 }}>
-            {recommendedBooks.map((book, idx) => (
-              <Pressable key={idx} className="mr-4" style={{ width: width * 0.35 }}>
-                <Image
-                  source={{ uri: book.image }}
-                  style={{ width: "100%", height: 180, borderRadius: 12 }}
-                  resizeMode="cover"
-                  className="shadow-md"
-                />
-                <View className="mt-2">
-                  <Text className="text-sm font-bold text-gray-900 dark:text-white" numberOfLines={1}>
-                    {book.title}
-                  </Text>
-                  <Text className="text-xs text-gray-500 dark:text-gray-400" numberOfLines={1}>
-                    {book.author}
-                  </Text>
-                  <View className="flex-row items-center mt-1">
-                    <Feather name="star" size={12} color="#f59e0b" />
-                    <Text className="text-xs text-gray-500 dark:text-gray-400 ml-1">{book.rating}</Text>
+          {recommendedBooks.length > 0 ? (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 20 }}>
+              {recommendedBooks.map((book, idx) => (
+                <Pressable key={idx} className="mr-4" style={{ width: width * 0.35 }}>
+                  <Image
+                    source={{ uri: book.image }}
+                    style={{ width: "100%", height: 180, borderRadius: 12 }}
+                    resizeMode="cover"
+                    className="shadow-md"
+                  />
+                  <View className="mt-2">
+                    <Text className="text-sm font-bold text-gray-900 dark:text-white" numberOfLines={1}>
+                      {book.title}
+                    </Text>
+                    <Text className="text-xs text-gray-500 dark:text-gray-400" numberOfLines={1}>
+                      {book.author}
+                    </Text>
                   </View>
-                </View>
+                </Pressable>
+              ))}
+            </ScrollView>
+          ) : (
+            <View className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 items-center">
+              <Feather name="zap" size={24} color="#6366f1" />
+              <Text className="text-gray-700 dark:text-gray-300 mt-3 font-medium">No recommendations yet</Text>
+              <Text className="text-sm text-gray-500 dark:text-gray-400 text-center mt-1 mb-3">
+                Once you finish a few books, we’ll have suggestions for you.
+              </Text>
+              <Pressable className="py-2.5 px-6 bg-indigo-600 rounded-full">
+                <Text className="text-white font-medium">Start Reading</Text>
               </Pressable>
-            ))}
-          </ScrollView>
+            </View>
+          )}
+
         </View>
 
         {/* Book Club Activity */}

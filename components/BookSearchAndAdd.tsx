@@ -4,16 +4,7 @@ import { View, Text, TextInput, FlatList, Image, TouchableOpacity, ActivityIndic
 import Toast from "react-native-toast-message";
 import { searchBooksByTitle, getBookByISBN } from "../lib/api/booksApi";
 import { addToBookshelf } from "../lib/api/bookshelfApi";
-
-interface Book {
-  title: string;
-  isbn13: string;
-  authors: string[];
-  pages?: number;
-  image: string;
-  excerpt?: string;
-  synopsis?: string;
-}
+import { Book } from "../lib/api/types";
 
 interface BookSearchAndAddProps {
   token: string;
@@ -66,9 +57,10 @@ export default function BookSearchAndAdd({ token, onAdd, redirectOnAdd }: BookSe
             authors: book.authors,
             pages: book.pages || 0,
             image: book.image,
-            overview: book.excerpt || "",
             synopsis: book.synopsis || "",
-            datePublished: new Date().toISOString().split("T")[0],
+            date_published: book.date_published || "",
+            subjects: book.subjects || [],
+            publisher: book.publisher || "",
           }),
         });
         if (!response.ok) throw new Error("Failed to add book to DB");

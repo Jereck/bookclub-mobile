@@ -27,14 +27,14 @@ export interface Book {
   id: number;
   isbn13: string;
   title: string;
-  genres?: string[];
+  subjects?: string[];
   rating?: number;
   authors?: string[];
   pages?: number;
   image?: string;
   synopsis?: string;
-  overview?: string;
-  datePublished?: string;
+  publisher?: string;
+  date_published?: string;
   createdAt: string;
 }
 
@@ -62,7 +62,7 @@ export interface BookClub {
   ownerId: number;
   currentBook?: Book | null;
   members?: User[];
-  createdAt?: string;
+  created_at?: string;
 }
 
 // ─── Invite ────────────────────────────────────────────────────────────────────

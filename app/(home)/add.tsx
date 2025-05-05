@@ -8,16 +8,7 @@ import { searchBooksByTitle } from '../../lib/api/booksApi';
 import { getBookByISBN } from '../../lib/api/booksApi';
 // import { addBookToDatabase } from '../../lib/api/booksApi'; 
 import { addToBookshelf } from '../../lib/api/bookshelfApi';
-
-interface Book {
-  title: string;
-  isbn13: string;
-  authors: string[];
-  pages?: number;
-  image: string;
-  excerpt?: string;
-  synopsis?: string;
-}
+import { Book } from '../../lib/api/types';
 
 export default function AddBookPage() {
   const token = useAppStore((state) => state.token)!;
@@ -65,9 +56,10 @@ export default function AddBookPage() {
             authors: book.authors,
             pages: book.pages || 0,
             image: book.image,
-            overview: book.excerpt || '',
             synopsis: book.synopsis || '',
-            datePublished: new Date().toISOString().split('T')[0],
+            date_published: book.date_published || '',
+            publisher: book.publisher || '',
+            subjects: book.subjects || [],
           }),
         });
         if (!response.ok) throw new Error("Failed to add book to DB");

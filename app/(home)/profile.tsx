@@ -15,44 +15,14 @@ import {
 } from "../../lib/api"
 import { useFocusEffect } from "expo-router"
 import { LinearGradient } from "expo-linear-gradient"
-import type { Invite } from "../../lib/api/types"
-
-interface Book {
-  id: number
-  title: string
-  authors: string[]
-  image: string
-  isbn13: string
-  pages: number
-  synopsis: string
-  datePublished: string
-}
-
-interface BookshelfEntry {
-  id: number
-  book: Book
-  currentPage: number
-  rating: number | null
-  read: boolean
-  addedAt: string
-}
-
-interface UserProfile {
-  id: number
-  username: string
-  email: string
-  readingGoal: number
-  booksRead: number
-  currentlyReading: BookshelfEntry | null
-  avatar?: string
-}
+import type { BookshelfEntry, Invite, User } from "../../lib/api/types"
 
 export default function ProfileTab() {
   const logout = useAppStore((state) => state.logout)
   const token = useAppStore((state) => state.token)
   const user = useAppStore((state) => state.user)
 
-  const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [profile, setProfile] = useState<User | null>(null)
   const [readingGoal, setReadingGoal] = useState("")
   const [currentEntry, setCurrentEntry] = useState<BookshelfEntry | null>(null)
   const [currentlyReading, setCurrentlyReading] = useState<BookshelfEntry[]>([])
@@ -166,13 +136,9 @@ export default function ProfileTab() {
           className="px-4 pt-8 pb-16 items-center"
         >
           <View className="w-24 h-24 rounded-full bg-white/20 backdrop-blur-lg mb-4 overflow-hidden border-2 border-white/30">
-            {profile?.avatar ? (
-              <Image source={{ uri: profile.avatar }} className="w-full h-full" />
-            ) : (
-              <View className="w-full h-full items-center justify-center">
-                <Feather name="user" size={40} color="#ffffff" />
-              </View>
-            )}
+            <View className="w-full h-full items-center justify-center">
+              <Feather name="user" size={40} color="#ffffff" />
+            </View>
           </View>
           <Text className="text-2xl font-bold text-white">{user?.username || "Reader"}</Text>
           <Text className="text-sm text-indigo-100 mt-1">{user?.email}</Text>
@@ -272,9 +238,9 @@ export default function ProfileTab() {
 
             {currentlyReading.length > 0 ? (
               currentlyReading.map((entry) => (
-                <Pressable key={entry.book.id} className="flex-row bg-gray-50 dark:bg-gray-700 rounded-xl p-3 mb-3">
+                <Pressable key={entry.book?.id} className="flex-row bg-gray-50 dark:bg-gray-700 rounded-xl p-3 mb-3">
                   <View className="w-16 h-24 bg-gray-200 dark:bg-gray-600 rounded-md overflow-hidden mr-3">
-                    {entry.book.image ? (
+                    {entry.book?.image ? (
                       <Image source={{ uri: entry.book.image }} className="w-full h-full" resizeMode="cover" />
                     ) : (
                       <View className="w-full h-full items-center justify-center">
@@ -284,22 +250,22 @@ export default function ProfileTab() {
                   </View>
                   <View className="flex-1 justify-center">
                     <Text className="text-base font-medium text-gray-900 dark:text-white" numberOfLines={2}>
-                      {entry.book.title}
+                      {entry.book?.title}
                     </Text>
-                    {entry.book.authors && (
+                    {entry.book?.authors && (
                       <Text className="text-sm text-gray-500 dark:text-gray-400 mb-1">{entry.book.authors[0]}</Text>
                     )}
                     <View className="flex-row items-center mb-1">
                       <Feather name="book" size={14} color="#6366f1" />
                       <Text className="text-xs text-gray-500 dark:text-gray-400 ml-1">
-                        Page {entry.currentPage || 0} of {entry.book.pages || 300}
+                        Page {entry.currentPage || 0} of {entry.book?.pages || 300}
                       </Text>
                     </View>
                     <View className="w-full h-1.5 bg-gray-200 dark:bg-gray-600 rounded-full mt-1">
                       <View
                         className="h-1.5 bg-indigo-600 rounded-full"
                         style={{
-                          width: `${Math.min(100, ((entry.currentPage || 0) / (entry.book.pages || 300)) * 100)}%`,
+                          width: `${Math.min(100, ((entry.currentPage || 0) / (entry.book?.pages || 300)) * 100)}%`,
                         }}
                       />
                     </View>
@@ -343,15 +309,15 @@ export default function ProfileTab() {
                 <Text className="text-sm text-gray-600 dark:text-gray-400 mb-3">Select a book to start reading</Text>
                 {library.slice(0, 3).map((entry) => (
                   <Pressable
-                    key={entry.book.id}
+                    key={entry.book?.id}
                     className="flex-row items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-xl mb-2"
                   >
                     <View
                       style={{ width: 48, height: 72 }}
                       className="bg-gray-200 dark:bg-gray-600 rounded-md overflow-hidden mr-3"
                     >
-                      {entry.book.image ? (
-                        <Image source={{ uri: entry.book.image }} className="w-full h-full" resizeMode="cover" />
+                      {entry.book?.image ? (
+                        <Image source={{ uri: entry.book?.image }} className="w-full h-full" resizeMode="cover" />
                       ) : (
                         <View className="w-full h-full items-center justify-center">
                           <Feather name="book" size={18} color="#9ca3af" />
@@ -360,10 +326,10 @@ export default function ProfileTab() {
                     </View>
                     <View className="flex-1">
                       <Text className="text-base font-medium text-gray-900 dark:text-white" numberOfLines={1}>
-                        {entry.book.title}
+                        {entry.book?.title}
                       </Text>
-                      {entry.book.authors && (
-                        <Text className="text-sm text-gray-500 dark:text-gray-400">{entry.book.authors[0]}</Text>
+                      {entry.book?.authors && (
+                        <Text className="text-sm text-gray-500 dark:text-gray-400">{entry.book?.authors[0]}</Text>
                       )}
                       {entry.rating && (
                         <View className="flex-row items-center mt-1">
