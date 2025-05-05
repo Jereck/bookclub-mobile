@@ -81,7 +81,7 @@ const ClubCard = ({
 
             <View className="flex-row items-center mt-1">
               <Feather name="users" size={14} color="#9ca3af" />
-              <Text className="ml-1 text-sm text-gray-500 dark:text-gray-400">{club.members?.length || "0"} members</Text>
+              <Text className="ml-1 text-sm text-gray-500 dark:text-gray-400">{club.memberCount || "0"} members</Text>
 
               {club.currentBook && (
                 <>
@@ -220,6 +220,8 @@ export default function ClubTab() {
       setRefreshing(false)
     }
   }, [token])
+
+  console.log("Clubs:", clubs)
 
   const handleCreateClub = async () => {
     if (!clubName.trim()) return

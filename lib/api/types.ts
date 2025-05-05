@@ -62,6 +62,7 @@ export interface BookClub {
   ownerId: number;
   currentBook?: Book | null;
   members?: User[];
+  memberCount?: number;
   created_at?: string;
 }
 
