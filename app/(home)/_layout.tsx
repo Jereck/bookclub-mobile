@@ -141,9 +141,9 @@ export default function AppTabsLayout() {
       }}
     >
       <Tabs.Screen name="index" options={{ title: "Home" }} />
-      <Tabs.Screen name="club" options={{ title: "Club" }} />
+      <Tabs.Screen name="club" options={{ title: "My Clubs" }} />
       <Tabs.Screen name="add" options={{ title: "" }} />
-      <Tabs.Screen name="books" options={{ title: "Books" }} />
+      <Tabs.Screen name="books" options={{ title: "My Bookshelf" }} />
       <Tabs.Screen name="profile" options={{ title: "Profile" }} />
     </Tabs>
   )

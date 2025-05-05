@@ -1,35 +1,34 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "expo-router";
-import { View, Text, FlatList, TextInput, Pressable, Alert, ActivityIndicator } from "react-native";
+import {
+  View,
+  Text,
+  FlatList,
+  TextInput,
+  Pressable,
+  Alert,
+  ActivityIndicator,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { getBookClubs, createBookClub, getBookClubInvites, acceptBookClubInvite } from "../../../lib/api";
+import {
+  getBookClubs,
+  createBookClub,
+} from "../../../lib/api";
 import { useAppStore } from "../../../store/store";
 import { Feather } from "@expo/vector-icons";
+import { BookClub } from "../../../lib/api/types";
 
 export default function ClubTab() {
   const router = useRouter();
   const token = useAppStore((state) => state.token);
+
   const [clubs, setClubs] = useState([]);
   const [clubName, setClubName] = useState("");
+
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
-  const [invites, setInvites] = useState([]);
 
-  useEffect(() => {
-    const loadInvites = async () => {
-      try {
-        const data = await getBookClubInvites(token!);
-        console.log("Invites: ", data);
-        setInvites(data);
-      } catch (err) {
-        Alert.alert("Error", (err as Error).message);
-      }
-    };
-
-    loadInvites();
-  }, []);
-
-  const fetchClubs = async () => {
+  const loadClubs = async () => {
     try {
       setLoading(true);
       const data = await getBookClubs(token!);
@@ -45,9 +44,9 @@ export default function ClubTab() {
     if (!clubName.trim()) return;
     try {
       setCreating(true);
-      await createBookClub(token!, clubName);
+      await createBookClub(token!, clubName.trim());
       setClubName("");
-      await fetchClubs(); // refresh
+      await loadClubs();
     } catch (err) {
       Alert.alert("Error", (err as Error).message);
     } finally {
@@ -55,66 +54,46 @@ export default function ClubTab() {
     }
   };
 
+
   useEffect(() => {
-    fetchClubs();
+    loadClubs();
   }, []);
 
   return (
     <SafeAreaView className="flex-1 bg-white dark:bg-gray-900 p-4">
       <Text className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Your Book Clubs</Text>
 
-      {/* Create new club */}
+      {/* Create New Club */}
       <View className="flex-row items-center mb-6">
         <TextInput
           value={clubName}
           onChangeText={setClubName}
           placeholder="New club name"
+          placeholderTextColor="#9ca3af"
           className="flex-1 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-800"
         />
         <Pressable
           onPress={handleCreateClub}
           disabled={creating}
-          className="ml-2 bg-indigo-600 px-4 py-2 rounded-lg"
+          className={`ml-2 px-4 py-2 rounded-lg ${
+            creating ? "bg-indigo-400" : "bg-indigo-600"
+          }`}
         >
           <Text className="text-white font-medium">{creating ? "..." : "Add"}</Text>
         </Pressable>
       </View>
 
-      <View className="mb-6">
-        <Text className="text-lg font-bold text-gray-900 dark:text-white mb-3">Pending Invites</Text>
-        {invites.length === 0 ? (
-          <Text className="text-sm text-gray-500 dark:text-gray-400">You have no invites</Text>
-        ) : (
-          invites.map((invite) => (
-            <View key={invite.id} className="mb-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
-              <Text className="text-base font-medium text-gray-900 dark:text-white">
-                Invite to: {invite.bookClubName}
-              </Text>
-              <Pressable
-                onPress={async () => {
-                  try {
-                    await acceptBookClubInvite(token!, invite.id);
-                    Alert.alert("Joined", `You’ve joined ${invite.bookClubName}`);
-                    // Optionally refetch invites or clubs
-                  } catch (err) {
-                    Alert.alert("Error", (err as Error).message);
-                  }
-                }}
-                className="mt-2 px-4 py-2 bg-indigo-600 rounded-lg"
-              >
-                <Text className="text-white font-medium">Accept Invite</Text>
-              </Pressable>
-            </View>
-          ))
-        )}
-      </View>
-
+      {/* Clubs Section */}
+      <Text className="text-lg font-bold text-gray-900 dark:text-white mb-3">Your Clubs</Text>
       {loading ? (
         <ActivityIndicator size="large" color="#6366f1" />
+      ) : clubs.length === 0 ? (
+        <Text className="text-sm text-gray-500 dark:text-gray-400">You haven't joined any clubs yet.</Text>
       ) : (
         <FlatList
           data={clubs}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={(item: BookClub) => item.id.toString()}
+          contentContainerStyle={{ paddingBottom: 40 }}
           renderItem={({ item }) => (
             <Pressable
               onPress={() => router.push(`/club/${item.id}`)}

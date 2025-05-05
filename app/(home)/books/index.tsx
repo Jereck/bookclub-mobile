@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { useRouter } from "expo-router"
+import { useEffect, useState } from "react";
+import { useRouter } from "expo-router";
 import {
   View,
   Text,
@@ -12,43 +12,30 @@ import {
   TouchableOpacity,
   TextInput,
   Dimensions,
-} from "react-native"
-import { SafeAreaView } from "react-native-safe-area-context"
-import { Feather } from "@expo/vector-icons"
-import { useAppStore } from "../../../store/store"
-import { getUserLibrary } from "../../../lib/api"
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Feather } from "@expo/vector-icons";
+import { useAppStore } from "../../../store/store";
+import { getUserBookshelf } from "../../../lib/api/bookshelfApi";
 
-// Get screen dimensions for responsive layout
-const { width } = Dimensions.get("window")
-
-// Types
-interface Author {
-  name: string
-  id: number
-}
+const { width } = Dimensions.get("window");
 
 interface Book {
-  id: number
-  title: string
-  authors: Author[] | string[]
-  image: string
-  datePublished?: string
-  pages?: number
-  genre?: string
+  id: number;
+  title: string;
+  authors: string[];
+  image: string;
+  genre?: string;
 }
 
-// Book Grid Item Component
 const BookGridItem = ({ book, onPress }: { book: Book; onPress: () => void }) => {
-  // Format authors array to string
-  const authorText = Array.isArray(book.authors)
-    ? book.authors.map((author) => (typeof author === "string" ? author : author.name)).join(", ")
-    : "Unknown Author"
+  const authorText = book.authors.join(", ");
 
   return (
     <TouchableOpacity
       onPress={onPress}
       className="mb-6 mx-1"
-      style={{ width: (width - 48) / 2 }} // 2 columns with padding
+      style={{ width: (width - 48) / 2 }}
     >
       <View className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-sm">
         <View className="aspect-[2/3] bg-gray-200 dark:bg-gray-700">
@@ -64,15 +51,11 @@ const BookGridItem = ({ book, onPress }: { book: Book; onPress: () => void }) =>
         </View>
       </View>
     </TouchableOpacity>
-  )
-}
+  );
+};
 
-// Book List Item Component
 const BookListItem = ({ book, onPress }: { book: Book; onPress: () => void }) => {
-  // Format authors array to string
-  const authorText = Array.isArray(book.authors)
-    ? book.authors.map((author) => (typeof author === "string" ? author : author.name)).join(", ")
-    : "Unknown Author"
+  const authorText = book.authors.join(", ");
 
   return (
     <TouchableOpacity
@@ -101,94 +84,85 @@ const BookListItem = ({ book, onPress }: { book: Book; onPress: () => void }) =>
         </View>
       </View>
     </TouchableOpacity>
-  )
-}
+  );
+};
 
 export default function BooksTab() {
-  const router = useRouter()
-  const token = useAppStore((state) => state.token)
-  const needsRefresh = useAppStore((state) => state.needsRefresh)
-  const setNeedsRefresh = useAppStore((state) => state.setNeedsRefresh)
+  const router = useRouter();
+  const token = useAppStore((state) => state.token);
+  const needsRefresh = useAppStore((state) => state.needsRefresh);
+  const setNeedsRefresh = useAppStore((state) => state.setNeedsRefresh);
 
-  const [books, setBooks] = useState<Book[]>([])
-  const [filteredBooks, setFilteredBooks] = useState<Book[]>([])
-  const [loading, setLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState("")
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
+  const [books, setBooks] = useState<Book[]>([]);
+  const [filteredBooks, setFilteredBooks] = useState<Book[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   const loadLibrary = async () => {
-    setLoading(true)
+    setLoading(true);
     try {
-      const library = await getUserLibrary(token!)
+      const bookshelf = await getUserBookshelf(token!);
 
-      // Add sample genres if not provided by API
-      const enhancedLibrary = library.map((book: Book) => {
-        if (!book.genre) {
-          // Assign random genres for demo purposes
-          const genres = ["Fiction", "Science Fiction", "Fantasy", "Mystery", "Biography", "History"]
-          book.genre = genres[Math.floor(Math.random() * genres.length)]
-        }
-        return book
-      })
+      const enhancedLibrary = bookshelf.map((entry: any) => {
+        const genres = ["Fiction", "Sci-Fi", "Fantasy", "Mystery", "History"];
+        return {
+          id: entry.book.id,
+          title: entry.book.title,
+          authors: entry.book.authors,
+          image: entry.book.image,
+          genre: genres[Math.floor(Math.random() * genres.length)],
+        };
+      });
 
-      setBooks(enhancedLibrary)
-      setFilteredBooks(enhancedLibrary)
+      setBooks(enhancedLibrary);
+      setFilteredBooks(enhancedLibrary);
     } catch (err) {
-      Alert.alert("Error", (err as Error).message)
+      Alert.alert("Error", (err as Error).message);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    loadLibrary()
-  }, [])
+    loadLibrary();
+  }, []);
 
   useEffect(() => {
     if (needsRefresh) {
-      loadLibrary()
-      setNeedsRefresh(false)
+      loadLibrary();
+      setNeedsRefresh(false);
     }
-  }, [needsRefresh])
+  }, [needsRefresh]);
 
-  // Filter books based on search query
   useEffect(() => {
     if (searchQuery.trim() === "") {
-      setFilteredBooks(books)
+      setFilteredBooks(books);
     } else {
-      const query = searchQuery.toLowerCase()
-      const filtered = books.filter(
-        (book) =>
-          book.title.toLowerCase().includes(query) ||
-          (Array.isArray(book.authors) &&
-            book.authors.some((author) => {
-              if (typeof author === "string") {
-                return author.toLowerCase().includes(query)
-              } else {
-                return author.name.toLowerCase().includes(query)
-              }
-            })),
-      )
-      setFilteredBooks(filtered)
+      const query = searchQuery.toLowerCase();
+      const filtered = books.filter((book) =>
+        book.title.toLowerCase().includes(query) ||
+        book.authors.some((author) => author.toLowerCase().includes(query))
+      );
+      setFilteredBooks(filtered);
     }
-  }, [searchQuery, books])
+  }, [searchQuery, books]);
 
   if (loading) {
     return (
       <SafeAreaView className="flex-1 bg-white dark:bg-gray-900 justify-center items-center">
         <ActivityIndicator size="large" color="#6366f1" />
-        <Text className="mt-4 text-gray-600 dark:text-gray-400">Loading your library...</Text>
+        <Text className="mt-4 text-gray-600 dark:text-gray-400">Loading your bookshelf...</Text>
       </SafeAreaView>
-    )
+    );
   }
 
   return (
     <SafeAreaView className="flex-1 bg-white dark:bg-gray-900">
       <View className="flex-1">
-        {/* Header */}
         <View className="px-4 pt-4 pb-2">
           <View className="flex-row justify-between items-center mb-4">
-            <Text className="text-2xl font-bold text-gray-900 dark:text-white">My Library</Text>
+            <Text className="text-2xl font-bold text-gray-900 dark:text-white">My Bookshelf</Text>
             <View className="flex-row">
               <TouchableOpacity
                 onPress={() => setViewMode("grid")}
@@ -209,7 +183,6 @@ export default function BooksTab() {
             </View>
           </View>
 
-          {/* Search Bar */}
           <View className="flex-row items-center bg-gray-100 dark:bg-gray-800 rounded-full px-3 py-2 mb-4">
             <Feather name="search" size={18} color="#9ca3af" />
             <TextInput
@@ -220,25 +193,22 @@ export default function BooksTab() {
               onChangeText={setSearchQuery}
             />
             {searchQuery.length > 0 && (
-              <TouchableOpacity onPress={() => setSearchQuery("")}>
-                <Feather name="x" size={18} color="#9ca3af" />
-              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setSearchQuery("")}> <Feather name="x" size={18} color="#9ca3af" /> </TouchableOpacity>
             )}
           </View>
         </View>
 
-        {/* Book List */}
         {books.length === 0 ? (
           <View className="flex-1 justify-center items-center px-4">
             <Feather name="book" size={48} color="#9ca3af" />
             <Text className="text-xl font-medium text-gray-500 dark:text-gray-400 mt-4 text-center">
-              Your library is empty
+              Your bookshelf is empty
             </Text>
             <Text className="text-sm text-gray-500 dark:text-gray-400 mt-2 text-center">
               Start adding books to your collection
             </Text>
             <TouchableOpacity
-              onPress={() => Alert.alert("Add Books", "Book discovery feature coming soon!")}
+              onPress={() => router.push("/(home)/add")}
               className="mt-6 px-4 py-2 bg-indigo-600 rounded-lg"
             >
               <Text className="text-white font-medium">Discover Books</Text>
@@ -263,7 +233,7 @@ export default function BooksTab() {
             keyExtractor={(item) => item.id.toString()}
             contentContainerStyle={{ padding: 16 }}
             numColumns={viewMode === "grid" ? 2 : 1}
-            key={viewMode} // Force re-render when view mode changes
+            key={viewMode}
             renderItem={({ item }) =>
               viewMode === "grid" ? (
                 <BookGridItem book={item} onPress={() => router.push(`/books/${item.id}`)} />
@@ -271,10 +241,10 @@ export default function BooksTab() {
                 <BookListItem book={item} onPress={() => router.push(`/books/${item.id}`)} />
               )
             }
-            ListFooterComponent={<View className="h-20" />} // Add space at the bottom for tab bar
+            ListFooterComponent={<View className="h-20" />}
           />
         )}
       </View>
     </SafeAreaView>
-  )
+  );
 }

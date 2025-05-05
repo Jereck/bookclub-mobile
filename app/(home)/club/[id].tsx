@@ -6,7 +6,9 @@ import { View, Text, ActivityIndicator, FlatList, Pressable, Alert, TouchableOpa
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useAppStore } from "../../../store/store";
-import { getBookClubDetails, searchUserByEmail, sendBookClubInvite } from "../../../lib/api";
+import { getBookClubDetails, getUserBookshelf, sendBookClubInvite, setClubCurrentBook, searchUserByEmail } from "../../../lib/api";
+import { Book } from "../../../lib/api/types";
+import BookSearchAndAdd from "../../../components/BookSearchAndAdd";
 
 interface Member {
   id: number;
@@ -17,13 +19,24 @@ interface Member {
 interface BookClub {
   id: number;
   name: string;
+  ownerId: number;
+  createdAt: string;
   members: Member[];
+  currentBook?: {
+    id: number;
+    title: string;
+    authors?: string[];
+    image?: string;
+  } | null;
 }
 
 export default function ClubDetailScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const token = useAppStore((state) => state.token);
+  const user = useAppStore((state) => state.user);
+  const [library, setLibrary] = useState<Book[]>([]);
+  const [settingBook, setSettingBook] = useState(false);
   const [club, setClub] = useState<BookClub | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -35,6 +48,8 @@ export default function ClubDetailScreen() {
     const loadDetails = async () => {
       try {
         const data = await getBookClubDetails(token!, Number(id));
+        const libraryData = await getUserBookshelf(token!);
+        setLibrary(libraryData);
         setClub(data);
       } catch (err) {
         Alert.alert("Error", (err as Error).message);
@@ -99,6 +114,43 @@ export default function ClubDetailScreen() {
             {searching ? <ActivityIndicator size="small" color="#6366f1" /> : <Feather name="search" size={20} color="#6366f1" />}
           </TouchableOpacity>
         </View>
+
+        {club?.currentBook ? (
+          <View className="mt-6 p-4 bg-indigo-50 dark:bg-indigo-900 rounded-xl">
+            <Text className="text-lg font-bold text-gray-900 dark:text-white mb-2">Currently Reading</Text>
+            <Text className="text-base text-gray-800 dark:text-white">{club.currentBook.title}</Text>
+            {club.currentBook.authors && (
+              <Text className="text-sm text-gray-500 dark:text-gray-400">{club.currentBook.authors.join(", ")}</Text>
+            )}
+          </View>
+        ) : (
+          <View className="mt-6 p-4 bg-gray-100 dark:bg-gray-800 rounded-xl">
+            <Text className="text-base text-gray-500 dark:text-gray-400">No book set for this club yet.</Text>
+          </View>
+        )}
+
+        {user?.id === club?.ownerId && (
+          <View className="mt-6">
+            <Text className="text-lg font-semibold text-gray-800 dark:text-white mb-2">Set Book for Club</Text>
+
+            <BookSearchAndAdd
+              token={token!}
+              onAdd={async (bookId) => {
+                try {
+                  if (!club) return;
+                  await setClubCurrentBook(token!, club.id, bookId);
+                  Alert.alert("Success", "Book set as current club read!");
+                  const updated = await getBookClubDetails(token!, club.id);
+                  setClub(updated);
+                } catch (err) {
+                  Alert.alert("Error", (err as Error).message);
+                }
+              }}
+            />
+            {settingBook && <ActivityIndicator className="mt-2" size="small" color="#6366f1" />}
+          </View>
+        )}
+
 
         {foundUser && (
           <View className="mt-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">

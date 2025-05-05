@@ -25,7 +25,7 @@ export default function LoginScreen() {
     try {
       setIsLoading(true)
       const { token, user } = await loginUser(email, password)
-      login(token, user)
+      await login(token, user)
       router.replace("/")
     } catch (err) {
       Alert.alert("Login Error", (err as Error).message)

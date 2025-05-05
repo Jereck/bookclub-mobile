@@ -18,15 +18,15 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
   token: null,
   isAuthenticated: false,
 
-  login: async (token, user) => {
-    await AsyncStorage.setItem('token', token);
-    await AsyncStorage.setItem('user', JSON.stringify(user));
+  login: (token, user) => {
+    AsyncStorage.setItem('token', token);
+    AsyncStorage.setItem('user', JSON.stringify(user));
     set({ user, token, isAuthenticated: true });
   },
 
-  logout: async () => {
-    await AsyncStorage.removeItem('token');
-    await AsyncStorage.removeItem('user');
+  logout: () => {
+    AsyncStorage.removeItem('token');
+    AsyncStorage.removeItem('user');
     set({ user: null, token: null, isAuthenticated: false });
   },
 

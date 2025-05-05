@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
 import { Feather } from "@expo/vector-icons";
-import { useAuthStore } from "../store/authStore";
-import { searchUserByEmail, sendBookClubInvite } from "../lib/apiClient";
+import { useAppStore } from "../store/store";
+import { searchUserByEmail, sendBookClubInvite } from "../lib/api";
 
 export default function ClubInviteScreen({ clubId }: { clubId: number }) {
-  const token = useAuthStore((state) => state.token);
+  const token = useAppStore((state) => state.token);
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<any | null>(null);

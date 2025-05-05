@@ -1,3 +1,4 @@
+// BookDetail.tsx (Updated)
 "use client"
 
 import RenderHTML from 'react-native-render-html';
@@ -10,37 +11,15 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
-  TouchableOpacity,
   Pressable,
-  Dimensions,
+  TextInput,
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useWindowDimensions } from 'react-native';
 import { Feather } from "@expo/vector-icons"
 import { useAppStore } from '../../../store/store';
-import { getBookFromLibrary } from "../../../lib/api"
-
-// Get screen dimensions for responsive layout
-
-
-// Types
-interface Author {
-  name: string
-  id: number
-}
-
-interface Book {
-  id: number
-  title: string
-  authors: Author[] | string[]
-  isbn13: string
-  synopsis: string
-  datePublished: string
-  pages: number
-  image: string
-  rating?: number
-  genres?: string[]
-}
+import { getBookshelfEntry, markAsCurrentlyReading, unmarkCurrentlyReading, updateBookshelfEntry } from '../../../lib/api';
+import { Book, BookshelfEntry } from '../../../lib/api/types';
 
 // Star Rating Component
 const StarRating = ({ rating = 0 }: { rating: number }) => {
@@ -75,9 +54,8 @@ const BookActionButton = ({
 }) => (
   <Pressable
     onPress={onPress}
-    className={`flex-1 py-2.5 rounded-lg flex-row items-center justify-center ${
-      primary ? "bg-indigo-600" : "bg-gray-100 dark:bg-gray-800"
-    }`}
+    className={`flex-1 py-2.5 rounded-lg flex-row items-center justify-center ${primary ? "bg-indigo-600" : "bg-gray-100 dark:bg-gray-800"
+      }`}
   >
     <Feather name={icon as keyof typeof Feather.glyphMap} size={16} color={primary ? "white" : "#6366f1"} />
     <Text className={`ml-1.5 text-sm font-medium ${primary ? "text-white" : "text-indigo-600 dark:text-indigo-400"}`}>
@@ -100,28 +78,25 @@ export default function BookDetail() {
   const router = useRouter()
   const token = useAppStore((state) => state.token)
   const [book, setBook] = useState<Book | null>(null)
+  const [entry, setEntry] = useState<BookshelfEntry | null>(null)
+  const [currentPage, setCurrentPage] = useState(entry?.currentPage.toString() || "0");
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const loadBook = async () => {
       try {
-        const result = await getBookFromLibrary(Number(id), token!)
-        // Add sample rating if not provided by API
-        if (!result.book.rating) {
-          result.book.rating = 4.5
-        }
-        // Add sample genres if not provided by API
-        if (!result.book.genres) {
-          result.book.genres = ["Fiction", "Science Fiction", "Adventure"]
-        }
-        setBook(result.book)
+        const entry = await getBookshelfEntry(token!, Number(id))
+        if (!entry || !entry.book) throw new Error("Book not found")
+
+        setEntry(entry)
+        setCurrentPage(entry.currentPage.toString());
+        setBook(entry.book)
       } catch (err) {
         Alert.alert("Error", (err as Error).message)
       } finally {
         setLoading(false)
       }
     }
-
     if (id) loadBook()
   }, [id])
 
@@ -152,14 +127,9 @@ export default function BookDetail() {
     )
   }
 
-  // Format authors array to string
-  const authorText = Array.isArray(book.authors)
-    ? book.authors.map((author) => (typeof author === "string" ? author : author.name)).join(", ")
-    : "Unknown Author"
-
   return (
-    <SafeAreaView className="flex-1 bg-white dark:bg-gray-900">
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+    <SafeAreaView className="flex-1 bg-white dark:bg-gray-900 mb-14">
+      <ScrollView showsVerticalScrollIndicator={false}>
         {/* Book Cover with Gradient Overlay */}
         <View className="w-full h-72 bg-gray-100 dark:bg-gray-800">
           <Image source={{ uri: book.image }} style={{ width: "100%", height: "100%" }} resizeMode="cover" />
@@ -183,17 +153,37 @@ export default function BookDetail() {
                 <Text className="text-xl font-bold text-gray-900 dark:text-white" numberOfLines={2}>
                   {book.title}
                 </Text>
-                <Text className="text-sm text-gray-600 dark:text-gray-400 mt-1 mb-2">{authorText}</Text>
+                <Text className="text-sm text-gray-600 dark:text-gray-400 mt-1 mb-2">
+                  {book.authors?.join(', ') || "Unknown Author"}
+                </Text>
 
-                {/* Rating */}
                 <View className="flex-row items-center mb-2">
                   <StarRating rating={book.rating || 0} />
                   <Text className="ml-2 text-sm text-gray-600 dark:text-gray-400">
                     {book.rating?.toFixed(1) || "0.0"}
                   </Text>
                 </View>
+                {entry?.currentPage !== undefined && book.pages ? (
+                  <View className="w-full mt-1">
+                    <View className="flex-row justify-between mb-0.5">
+                      <Text className="text-xs text-gray-500 dark:text-gray-400">
+                        Page {entry.currentPage} of {book.pages}
+                      </Text>
+                      <Text className="text-xs text-gray-500 dark:text-gray-400">
+                        {Math.floor((entry.currentPage / book.pages) * 100)}%
+                      </Text>
+                    </View>
+                    <View className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                      <View
+                        className={`h-full ${entry.currentPage >= book.pages ? "bg-green-500" : "bg-indigo-600"} rounded-full`}
+                        style={{
+                          width: `${Math.min(100, (entry.currentPage / book.pages) * 100)}%`,
+                        }}
+                      />
+                    </View>
+                  </View>
+                ) : null}
 
-                {/* Genres */}
                 <View className="flex-row flex-wrap">
                   {book.genres?.map((genre, index) => (
                     <View key={index} className="bg-indigo-50 dark:bg-indigo-900/30 px-2 py-1 rounded-full mr-2 mb-1">
@@ -204,136 +194,170 @@ export default function BookDetail() {
               </View>
             </View>
 
-            {/* Action Buttons */}
             <View className="flex-row mt-4 space-x-2">
-              <BookActionButton
-                icon="book-open"
-                label="Read Now"
-                onPress={() => Alert.alert("Read", "Reading functionality coming soon!")}
-                primary
-              />
-              <BookActionButton
-                icon="bookmark"
-                label="Save"
-                onPress={() => Alert.alert("Save", "Book saved to your library!")}
+              {entry?.currentlyReading ? (
+                <BookActionButton
+                  icon="x-circle"
+                  label="Stop Reading"
+                  onPress={async () => {
+                    try {
+                      if (entry.book?.id) {
+                        await unmarkCurrentlyReading(token!, entry.book.id)
+                      } else {
+                        throw new Error("Book ID is undefined")
+                      }
+                      setEntry({ ...entry, currentlyReading: false })
+                      Alert.alert("Updated", "You’ve finished reading this book.")
+                    } catch (err) {
+                      Alert.alert("Error", (err as Error).message)
+                    }
+                  }}
+                  primary={false}
+                />
+              ) : (
+                <BookActionButton
+                  icon="book-open"
+                  label="Start Reading"
+                  onPress={async () => {
+                    try {
+                      if (entry && entry.book?.id) {
+                        await markAsCurrentlyReading(token!, entry.book.id)
+                      } else {
+                        throw new Error("Book entry or ID is undefined")
+                      }
+                      setEntry({ ...entry, currentlyReading: true })
+                      Alert.alert("Updated", "You’ve started reading this book.")
+                    } catch (err) {
+                      Alert.alert("Error", (err as Error).message)
+                    }
+                  }}
+                  primary
+                />
+              )}
+            </View>
+
+            {/* Page Tracking Section */}
+            <View className="mt-4">
+              <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Current Page</Text>
+              <View className="flex-row items-center space-x-2">
+                <TextInput
+                  value={currentPage}
+                  onChangeText={(text) => {
+                    const value = parseInt(text);
+                    if (!isNaN(value) && book.pages && value > book.pages) {
+                      setCurrentPage(book.pages.toString());
+                    } else {
+                      setCurrentPage(text);
+                    }
+                  }}
+                  keyboardType="numeric"
+                  className="flex-1 bg-gray-100 dark:bg-gray-700 px-3 py-2 rounded-lg text-gray-900 dark:text-white"
+                  placeholder="Page #"
+                  placeholderTextColor="#9ca3af"
+                />
+                <Pressable
+                  onPress={async () => {
+                    try {
+                      const page = parseInt(currentPage);
+                      if (isNaN(page) || page < 0) throw new Error("Invalid page number");
+                      if (book.pages && page > book.pages) throw new Error("Page number exceeds total pages");
+                      if (!entry || !entry.book?.id) throw new Error("Book entry or ID is undefined")
+                      const updated = await updateBookshelfEntry(token!, entry!.book.id, { currentPage: page });
+                      setEntry(updated);
+                      Alert.alert("Updated", `You're now on page ${page}`);
+                    } catch (err) {
+                      Alert.alert("Error", (err as Error).message);
+                    }
+                  }}
+                  className="px-4 py-2 bg-indigo-600 rounded-lg"
+                >
+                  <Text className="text-white font-medium">Update</Text>
+                </Pressable>
+              </View>
+            </View>
+
+            {!entry?.read ? (
+              <View className="mt-4">
+                <BookActionButton
+                  icon="check-circle"
+                  label="Mark as Read"
+                  primary
+                  onPress={async () => {
+                    try {
+                      if (!entry || !entry.book?.id) throw new Error("Book entry or ID is undefined");
+
+                      const updated = await updateBookshelfEntry(token!, entry.book.id, {
+                        read: true,
+                        currentPage: book.pages, // set to final page
+                      });
+
+                      setEntry(updated);
+                      setCurrentPage(String(book.pages)); // sync local state
+                      Alert.alert("Great job!", "You’ve finished reading this book.");
+                    } catch (err) {
+                      Alert.alert("Error", (err as Error).message);
+                    }
+                  }}
+                />
+              </View>
+            ) : (
+              <View className="mt-4">
+                <BookActionButton
+                  icon="check-circle"
+                  label="Mark as Unread"
+                  onPress={async () => {
+                    try {
+                      if (!entry || !entry.book?.id) throw new Error("Book entry or ID is undefined")
+                      const updated = await updateBookshelfEntry(token!, entry!.book.id, {
+                        read: false,
+                        currentPage: 0, // reset to 0
+                      });
+                      setEntry(updated);
+                      setCurrentPage("0"); // sync local state
+                      Alert.alert("Awesome!", "You have marked this book as unread");
+                    } catch (err) {
+                      Alert.alert("Error", (err as Error).message);
+                    }
+                  }}
+                />
+              </View>
+            )}
+
+
+            {/* Synopsis Section */}
+            <View className="mb-6">
+              <Text className="text-lg font-bold text-gray-900 dark:text-white mb-2">Synopsis</Text>
+              <RenderHTML
+                contentWidth={width}
+                source={{ html: `<div>${book.synopsis}</div>` }}
+                baseStyle={{ color: '#1f2937', fontSize: 16 }}
               />
             </View>
-          </View>
 
-          {/* Synopsis Section */}
-          <View className="mb-6">
-            <Text className="text-lg font-bold text-gray-900 dark:text-white mb-2">Synopsis</Text>
-            <RenderHTML
-              contentWidth={width}
-              source={{ html: `<div>${book.synopsis}</div>` }}
-              baseStyle={{ color: '#1f2937', fontSize: 16 }} // optional
-            />
-          </View>
-
-          {/* Book Details Section */}
-          <View className="mb-6">
-            <Text className="text-lg font-bold text-gray-900 dark:text-white mb-2">Details</Text>
-            <View className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
-              <InfoItem label="ISBN" value={book.isbn13} />
-              <InfoItem label="Published" value={book.datePublished} />
-              <InfoItem label="Pages" value={book.pages} />
-              <InfoItem label="Language" value="English" />
+            {/* Book Details Section */}
+            <View className="mb-6">
+              <Text className="text-lg font-bold text-gray-900 dark:text-white mb-2">Details</Text>
+              <View className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
+                <InfoItem label="ISBN" value={book.isbn13} />
+                <InfoItem label="Published" value={book.datePublished!} />
+                <InfoItem label="Pages" value={book.pages!} />
+                <InfoItem label="Language" value="English" />
+              </View>
             </View>
-          </View>
 
-          {/* Community Section */}
-          <View className="mb-8">
-            <View className="flex-row justify-between items-center mb-2">
-              <Text className="text-lg font-bold text-gray-900 dark:text-white">Community Reviews</Text>
-              <Pressable onPress={() => Alert.alert("Reviews", "Full reviews coming soon!")}>
-                <Text className="text-sm text-indigo-600 dark:text-indigo-400">See All</Text>
+            {/* Back Button */}
+            <View className="px-4 mb-6">
+              <Pressable
+                onPress={() => router.push("/books")}
+                className="py-3 rounded-lg flex-row items-center justify-center border border-gray-200 dark:border-gray-700"
+              >
+                <Feather name="arrow-left" size={18} color="#6366f1" />
+                <Text className="ml-2 text-indigo-600 dark:text-indigo-400 font-medium">Back to Books</Text>
               </Pressable>
             </View>
-
-            <View className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 mb-3">
-              <View className="flex-row items-center mb-2">
-                <Image
-                  source={{ uri: "https://randomuser.me/api/portraits/women/32.jpg" }}
-                  style={{ width: 36, height: 36, borderRadius: 18 }}
-                />
-                <View className="ml-2">
-                  <Text className="text-sm font-medium text-gray-900 dark:text-white">Sarah Johnson</Text>
-                  <View className="flex-row items-center">
-                    <StarRating rating={5} />
-                    <Text className="ml-2 text-xs text-gray-500 dark:text-gray-400">2 days ago</Text>
-                  </View>
-                </View>
-              </View>
-              <Text className="text-sm text-gray-700 dark:text-gray-300">
-                This book completely captivated me from start to finish. The character development was outstanding and
-                the plot kept me guessing throughout.
-              </Text>
-            </View>
-
-            <Pressable
-              onPress={() => Alert.alert("Add Review", "Review functionality coming soon!")}
-              className="flex-row items-center justify-center py-3 bg-gray-100 dark:bg-gray-800 rounded-lg"
-            >
-              <Feather name="edit-2" size={16} color="#6366f1" />
-              <Text className="ml-2 text-indigo-600 dark:text-indigo-400 font-medium">Write a Review</Text>
-            </Pressable>
-          </View>
-
-          {/* Similar Books Section */}
-          <View className="mb-12">
-            <Text className="text-lg font-bold text-gray-900 dark:text-white mb-3">You Might Also Like</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="ml-1">
-              {[1, 2, 3].map((item) => (
-                <Pressable key={item} className="mr-4 items-center" style={{ width: width * 0.25 }}>
-                  <Image
-                    source={{
-                      uri:
-                        item === 1
-                          ? "https://m.media-amazon.com/images/I/81nzxODnaJL._AC_UF1000,1000_QL80_.jpg"
-                          : item === 2
-                            ? "https://m.media-amazon.com/images/I/91uwocAMtSL._AC_UF1000,1000_QL80_.jpg"
-                            : "https://m.media-amazon.com/images/I/81XQ1+piiiL._AC_UF1000,1000_QL80_.jpg",
-                    }}
-                    style={{ width: width * 0.25, height: width * 0.4, borderRadius: 8 }}
-                    className="mb-2"
-                  />
-                  <Text className="text-xs font-medium text-gray-900 dark:text-white text-center" numberOfLines={2}>
-                    {item === 1 ? "Dune" : item === 2 ? "The Martian" : "Ready Player One"}
-                  </Text>
-                </Pressable>
-              ))}
-            </ScrollView>
-          </View>
-          {/* Back Button */}
-          <View className="px-4 mb-6">
-            <Pressable
-              onPress={() => router.push("/books")}
-              className="py-3 rounded-lg flex-row items-center justify-center border border-gray-200 dark:border-gray-700"
-            >
-              <Feather name="arrow-left" size={18} color="#6366f1" />
-              <Text className="ml-2 text-indigo-600 dark:text-indigo-400 font-medium">Back to Books</Text>
-            </Pressable>
           </View>
         </View>
       </ScrollView>
-
-      {/* Bottom Action Bar */}
-      <View className="px-4 py-3 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex-row justify-between">
-        <Pressable
-          onPress={() => Alert.alert("Club", "Book club functionality coming soon!")}
-          className="flex-row items-center"
-        >
-          <Feather name="users" size={20} color="#6366f1" />
-          <Text className="ml-2 text-indigo-600 dark:text-indigo-400 font-medium">Join Discussion</Text>
-        </Pressable>
-        <Pressable
-          onPress={() => Alert.alert("Reading List", "Added to your reading list!")}
-          className="flex-row items-center bg-indigo-600 px-4 py-2 rounded-lg"
-        >
-          <Feather name="plus" size={18} color="white" />
-          <Text className="ml-1 text-white font-medium">Add to List</Text>
-        </Pressable>
-      </View>
     </SafeAreaView>
   )
 }
