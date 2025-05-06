@@ -1,14 +1,12 @@
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { View, Text, TextInput, FlatList, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { useAppStore } from '../../store/store';
+import { useAppStore } from '@/store/store';
 import Toast from 'react-native-toast-message';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { searchBooksByTitle } from '../../lib/api/booksApi';
-import { getBookByISBN } from '../../lib/api/booksApi';
+import { searchBooksByTitle, getBookByISBN, addToBookshelf } from '@/lib/api';
 // import { addBookToDatabase } from '../../lib/api/booksApi'; 
-import { addToBookshelf } from '../../lib/api/bookshelfApi';
-import { Book } from '../../lib/api/types';
+import type { Book } from '@/lib/api/types';
 
 export default function AddBookPage() {
   const token = useAppStore((state) => state.token)!;

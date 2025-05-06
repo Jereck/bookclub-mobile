@@ -16,21 +16,21 @@ import {
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { Feather } from "@expo/vector-icons"
-import { useAppStore } from "../../../store/store"
+import { useAppStore } from "@/store/store"
 import {
   getBookClubDetails,
   getUserBookshelf,
   sendBookClubInvite,
   setClubCurrentBook,
   searchUserByEmail,
-} from "../../../lib/api"
-import type { Book, BookClub, User } from "../../../lib/api/types"
-import BookSearchAndAdd from "../../../components/BookSearchAndAdd"
+} from "@/lib/api"
+import type { Book, BookClub, User } from "@/lib/api/types"
+import BookSearchAndAdd from "@/components/BookSearchAndAdd"
 import { useFocusEffect } from "@react-navigation/native"
-import { MemberCountBadge } from "../../../components/MemberCountBadge"
-import { MemberItem } from "../../../components/MemberItem"
-import { CurrentBookCard } from "../../../components/CurrentBookCard"
-import { NoBookCard } from "../../../components/NoBookCard"
+import { MemberCountBadge } from "@/components/MemberCountBadge"
+import { MemberItem } from "@/components/MemberItem"
+import { CurrentBookCard } from "@/components/CurrentBookCard"
+import { NoBookCard } from "@/components/NoBookCard"
 
 export default function ClubDetailScreen() {
   const { id } = useLocalSearchParams()

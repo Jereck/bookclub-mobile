@@ -4,8 +4,8 @@ import { useState } from "react"
 import { View, TextInput, Text, Alert, Pressable, KeyboardAvoidingView, Platform } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useRouter } from "expo-router"
-import { useAppStore } from "../../store/store"
-import { loginUser } from "../../lib/api"
+import { useAppStore } from "@/store/store"
+import { loginUser } from "@/lib/api"
 import { Feather } from "@expo/vector-icons"
 
 export default function LoginScreen() {

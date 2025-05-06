@@ -1,15 +1,14 @@
 "use client"
 
 import { View, Text, ScrollView, Image, Pressable, Alert, Dimensions } from "react-native"
-import { useAppStore } from "../../store/store"
+import { useAppStore } from "@/store/store"
 import { Feather } from "@expo/vector-icons"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useFocusEffect, useRouter } from "expo-router"
 import { useCallback, useState } from "react"
-import { getBookRecommendations, getCurrentlyReadingBooks } from "../../lib/api"
-import type { BookshelfEntry } from "../../lib/api/types"
+import { getBookRecommendations, getCurrentlyReadingBooks } from "@/lib/api"
+import type { BookshelfEntry } from "@/lib/api/types"
 import { LinearGradient } from "expo-linear-gradient"
-import { format } from 'date-fns';
 
 const today = new Date();
 const currentDay = today.getDate();

@@ -4,7 +4,7 @@ import { useState, useCallback } from "react"
 import { View, Text, TextInput, ScrollView, Alert, Image, Pressable, ActivityIndicator } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { Feather } from "@expo/vector-icons"
-import { useAppStore } from "../../store/store"
+import { useAppStore } from "@/store/store"
 import {
   getUserProfile,
   updateUserReadingGoal,
@@ -12,10 +12,10 @@ import {
   getUserBookshelf,
   getBookClubInvites,
   acceptBookClubInvite,
-} from "../../lib/api"
+} from "@/lib/api"
 import { useFocusEffect } from "expo-router"
 import { LinearGradient } from "expo-linear-gradient"
-import type { BookshelfEntry, Invite, User } from "../../lib/api/types"
+import type { BookshelfEntry, Invite, User } from "@/lib/api/types"
 
 export default function ProfileTab() {
   const logout = useAppStore((state) => state.logout)

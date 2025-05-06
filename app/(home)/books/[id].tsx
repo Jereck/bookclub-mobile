@@ -19,14 +19,14 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useWindowDimensions } from "react-native"
 import { Feather } from "@expo/vector-icons"
-import { useAppStore } from "../../../store/store"
+import { useAppStore } from "@/store/store"
 import {
   getBookshelfEntry,
   markAsCurrentlyReading,
   unmarkCurrentlyReading,
   updateBookshelfEntry,
-} from "../../../lib/api"
-import type { Book, BookshelfEntry } from "../../../lib/api/types"
+} from "@/lib/api"
+import type { Book, BookshelfEntry } from "@/lib/api/types"
 import { useFocusEffect } from "@react-navigation/native"
 
 // Star Rating Component with interactive capability

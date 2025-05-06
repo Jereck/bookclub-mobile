@@ -16,10 +16,10 @@ import {
   Keyboard,
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
-import { getBookClubs, createBookClub } from "../../../lib/api"
-import { useAppStore } from "../../../store/store"
+import { getBookClubs, createBookClub } from "@/lib/api"
+import { useAppStore } from "@/store/store"
 import { Feather } from "@expo/vector-icons"
-import type { BookClub } from "../../../lib/api/types"
+import type { BookClub } from "@/lib/api/types"
 import { useFocusEffect } from "@react-navigation/native"
 
 // Club card component with animation

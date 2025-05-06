@@ -15,8 +15,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
-import { useAppStore } from "../../../store/store";
-import { getUserBookshelf } from "../../../lib/api/bookshelfApi";
+import { useAppStore } from "@/store/store";
+import { getUserBookshelf } from "@/lib/api/bookshelfApi";
 
 const { width } = Dimensions.get("window");
 
