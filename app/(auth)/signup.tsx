@@ -6,6 +6,7 @@ import { SafeAreaView } from "react-native-safe-area-context"
 import { useRouter } from "expo-router"
 import { registerUser } from "@/lib/api"
 import { Feather } from "@expo/vector-icons"
+import { useAppStore } from "@/store/store"
 
 export default function SignupScreen() {
   const [username, setUsername] = useState("")
@@ -15,6 +16,8 @@ export default function SignupScreen() {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
+
+  const login = useAppStore((state) => state.login)
 
   const validateForm = () => {
     if (!username || !email || !password || !confirmPassword) {
@@ -51,9 +54,12 @@ export default function SignupScreen() {
 
     try {
       setIsLoading(true)
-      await registerUser(username, email, password)
-      Alert.alert("Success", "Account created. Please log in.")
-      router.replace("/login")
+      const result = await registerUser(username, email, password)
+      const { token, user } = result;
+      await login(token, user)
+      
+      // Alert.alert("Success", "Account created. Please log in.")
+      router.replace("/(onboarding)")
     } catch (err) {
       Alert.alert("Signup Error", (err as Error).message)
     } finally {
@@ -153,13 +159,13 @@ export default function SignupScreen() {
             </View>
 
             {/* Terms and Conditions */}
-            <View className="flex-row items-start mt-2">
+            {/* <View className="flex-row items-start mt-2">
               <View className="w-5 h-5 rounded border border-gray-300 dark:border-gray-600 mr-2 mt-0.5" />
               <Text className="text-sm text-gray-600 dark:text-gray-400 flex-1">
                 I agree to the <Text className="text-indigo-600 dark:text-indigo-400">Terms of Service</Text> and{" "}
                 <Text className="text-indigo-600 dark:text-indigo-400">Privacy Policy</Text>
               </Text>
-            </View>
+            </View> */}
 
             {/* Signup Button */}
             <Pressable

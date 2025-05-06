@@ -7,6 +7,7 @@ export interface User {
   readingGoal: number;
   booksRead: number;
   currentlyReading?: BookshelfEntry | null;
+  onboarded: boolean;
 }
 
 // ─── Auth ──────────────────────────────────────────────────────────────────────

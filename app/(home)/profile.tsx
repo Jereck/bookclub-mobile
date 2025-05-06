@@ -7,6 +7,7 @@ import { Feather } from "@expo/vector-icons"
 import { useAppStore } from "@/store/store"
 import {
   getUserProfile,
+  updateUser,
   updateUserReadingGoal,
   getCurrentlyReadingBooks,
   getUserBookshelf,
@@ -68,7 +69,7 @@ export default function ProfileTab() {
 
     try {
       setUpdatingGoal(true)
-      await updateUserReadingGoal(token!, Number(readingGoal))
+      await updateUser(token!, { readingGoal: Number(readingGoal) })
 
       if (profile) {
         setProfile({

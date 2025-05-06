@@ -6,6 +6,8 @@ import { Feather } from "@expo/vector-icons"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useFocusEffect, useRouter } from "expo-router"
 import { useCallback, useState } from "react"
+import BookCard from "@/components/BookCard"
+import Modal from "react-native-modal"
 import { getBookRecommendations, getCurrentlyReadingBooks } from "@/lib/api"
 import type { BookshelfEntry } from "@/lib/api/types"
 import { LinearGradient } from "expo-linear-gradient"
@@ -22,7 +24,18 @@ export default function HomeTab() {
   const [currentlyReadingBooks, setCurrentlyReadingBooks] = useState<BookshelfEntry[]>([])
   const [recommendedBooks, setRecommendedBooks] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true)
+  const [selectedBook, setSelectedBook] = useState<any | null>(null);
+  const [isModalVisible, setModalVisible] = useState(false);
 
+  const openBookModal = (book: any) => {
+    setSelectedBook(book);
+    setModalVisible(true);
+  };
+
+  const closeModal = () => {
+    setModalVisible(false);
+    setSelectedBook(null);
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -192,7 +205,7 @@ export default function HomeTab() {
           {recommendedBooks.length > 0 ? (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 20 }}>
               {recommendedBooks.map((book, idx) => (
-                <Pressable key={idx} className="mr-4" style={{ width: width * 0.35 }}>
+                <Pressable key={idx} onPress={() => openBookModal(book)} className="mr-4" style={{ width: width * 0.35 }}>
                   <Image
                     source={{ uri: book.image }}
                     style={{ width: "100%", height: 180, borderRadius: 12 }}
@@ -222,8 +235,18 @@ export default function HomeTab() {
               </Pressable>
             </View>
           )}
-
         </View>
+
+        <Modal isVisible={isModalVisible} onBackdropPress={closeModal} style={{ margin: 0 }}>
+          <View className="flex-1 justify-center items-center">
+            {selectedBook && (
+              <BookCard
+                book={selectedBook}
+                onClose={closeModal}
+              />
+            )}
+          </View>
+        </Modal>
 
         {/* Book Club Activity */}
         <View className="px-4 pt-2 pb-4">
