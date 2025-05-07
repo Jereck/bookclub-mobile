@@ -20,7 +20,7 @@ const { width } = Dimensions.get("window")
 
 export default function HomeTab() {
   const router = useRouter()
-  const { token, user, fetchUserProfile } = useAppStore()
+  const { token, user, fetchUserProfile, logout } = useAppStore()
   const [currentlyReadingBooks, setCurrentlyReadingBooks] = useState<BookshelfEntry[]>([])
   const [recommendedBooks, setRecommendedBooks] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true)
@@ -270,6 +270,14 @@ export default function HomeTab() {
             </Pressable>
           </View>
         </View>
+
+        <Pressable
+            onPress={logout}
+            className="mb-8 py-3.5 rounded-xl border border-red-200 dark:border-red-800 flex-row items-center justify-center bg-white dark:bg-gray-800"
+          >
+            <Feather name="log-out" size={18} color="#ef4444" />
+            <Text className="ml-2 text-red-600 dark:text-red-400 font-medium">Logout</Text>
+          </Pressable>
       </SafeAreaView>
     </ScrollView>
   )

@@ -1,23 +1,57 @@
 "use client"
 
 import { useState } from "react"
-import { View, TextInput, Text, Alert, Pressable, KeyboardAvoidingView, Platform } from "react-native"
+import {
+  View,
+  TextInput,
+  Text,
+  Alert,
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
+  Image,
+  ScrollView,
+  ActivityIndicator,
+} from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
+import * as ImagePicker from "expo-image-picker"
 import { useRouter } from "expo-router"
-import { registerUser } from "@/lib/api"
+import { getPresignedProfileUploadUrl, registerUser } from "@/lib/api"
 import { Feather } from "@expo/vector-icons"
 import { useAppStore } from "@/store/store"
+
+const apiURL = process.env.EXPO_PUBLIC_API_URL
 
 export default function SignupScreen() {
   const [username, setUsername] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
+  const [imageUri, setImageUri] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
 
+  const router = useRouter()
   const login = useAppStore((state) => state.login)
+
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
+    if (status !== "granted") {
+      Alert.alert("Permission required", "We need access to your photos to set a profile picture.")
+      return
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.7,
+      allowsEditing: true,
+      aspect: [1, 1],
+    })
+
+    if (!result.canceled && result.assets.length > 0) {
+      setImageUri(result.assets[0].uri)
+    }
+  }
 
   const validateForm = () => {
     if (!username || !email || !password || !confirmPassword) {
@@ -54,11 +88,39 @@ export default function SignupScreen() {
 
     try {
       setIsLoading(true)
+
+      // Register user
       const result = await registerUser(username, email, password)
-      const { token, user } = result;
+      const { token, user } = result
+
       await login(token, user)
-      
-      // Alert.alert("Success", "Account created. Please log in.")
+
+      // Upload image if selected
+      if (imageUri) {
+        const { uploadUrl, key } = await getPresignedProfileUploadUrl(token)
+        const imageBlob = await fetch(imageUri).then((res) => res.blob())
+
+        const uploadRes = await fetch(uploadUrl, {
+          method: "PUT",
+          body: imageBlob,
+          headers: { "Content-Type": "image/jpeg" },
+        })
+
+        if (!uploadRes.ok) {
+          throw new Error("Profile picture upload failed")
+        }
+
+        // Update user profile with S3 key
+        await fetch(`${apiURL}/user/update`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ profilePicture: key }),
+        })
+      }
+
       router.replace("/(onboarding)")
     } catch (err) {
       Alert.alert("Signup Error", (err as Error).message)
@@ -68,155 +130,210 @@ export default function SignupScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white dark:bg-gray-900">
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} className="flex-1 justify-center">
-        <View className="px-8 py-12 w-full max-w-sm mx-auto">
-          {/* Logo and App Name */}
-          <View className="items-center mb-8">
-            <View className="w-20 h-20 bg-indigo-100 dark:bg-indigo-900 rounded-2xl items-center justify-center mb-4">
-              <Feather name="book-open" size={40} color="#6366f1" />
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
+        <ScrollView
+          contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 40 }}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Header */}
+          <View style={{ alignItems: "center", marginTop: 40, marginBottom: 30 }}>
+            <View
+              style={{
+                width: 60,
+                height: 60,
+                borderRadius: 16,
+                backgroundColor: "#EEF2FF",
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: 16,
+              }}
+            >
+              <Feather name="book-open" size={30} color="#6366F1" />
             </View>
-            <Text className="text-2xl font-bold text-gray-900 dark:text-white">Join BookClub</Text>
-            <Text className="text-sm text-gray-500 dark:text-gray-400 mt-1">Create your account</Text>
+            <Text style={{ fontSize: 24, fontWeight: "700", color: "#111827", marginBottom: 4 }}>Create Account</Text>
+            <Text style={{ fontSize: 14, color: "#6B7280" }}>Join BookClub and start your reading journey</Text>
           </View>
 
-          {/* Form */}
-          <View className="space-y-4">
-            {/* Username Field */}
-            <View>
-              <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Username</Text>
-              <View className="relative">
-                <View className="absolute left-3 top-2.5">
-                  <Feather name="user" size={18} color="#9ca3af" />
-                </View>
-                <TextInput
-                  placeholder="Your username"
-                  value={username}
-                  onChangeText={setUsername}
-                  autoCapitalize="none"
-                  className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg py-2.5 pl-10 pr-3 text-gray-900 dark:text-white w-full"
-                  placeholderTextColor="#9ca3af"
-                />
-              </View>
-            </View>
-
-            {/* Email Field */}
-            <View>
-              <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email</Text>
-              <View className="relative">
-                <View className="absolute left-3 top-2.5">
-                  <Feather name="mail" size={18} color="#9ca3af" />
-                </View>
-                <TextInput
-                  placeholder="your@email.com"
-                  value={email}
-                  onChangeText={setEmail}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg py-2.5 pl-10 pr-3 text-gray-900 dark:text-white w-full"
-                  placeholderTextColor="#9ca3af"
-                />
-              </View>
-            </View>
-
-            {/* Password Field */}
-            <View>
-              <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Password</Text>
-              <View className="relative">
-                <View className="absolute left-3 top-2.5">
-                  <Feather name="lock" size={18} color="#9ca3af" />
-                </View>
-                <TextInput
-                  placeholder="••••••••"
-                  value={password}
-                  secureTextEntry={!showPassword}
-                  onChangeText={setPassword}
-                  className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg py-2.5 pl-10 pr-10 text-gray-900 dark:text-white w-full"
-                  placeholderTextColor="#9ca3af"
-                />
-                <Pressable onPress={() => setShowPassword(!showPassword)} className="absolute right-3 top-2.5">
-                  <Feather name={showPassword ? "eye-off" : "eye"} size={18} color="#9ca3af" />
-                </Pressable>
-              </View>
-            </View>
-
-            {/* Confirm Password Field */}
-            <View>
-              <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Confirm Password</Text>
-              <View className="relative">
-                <View className="absolute left-3 top-2.5">
-                  <Feather name="lock" size={18} color="#9ca3af" />
-                </View>
-                <TextInput
-                  placeholder="••••••••"
-                  value={confirmPassword}
-                  secureTextEntry={!showPassword}
-                  onChangeText={setConfirmPassword}
-                  className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg py-2.5 pl-10 pr-3 text-gray-900 dark:text-white w-full"
-                  placeholderTextColor="#9ca3af"
-                />
-              </View>
-            </View>
-
-            {/* Terms and Conditions */}
-            {/* <View className="flex-row items-start mt-2">
-              <View className="w-5 h-5 rounded border border-gray-300 dark:border-gray-600 mr-2 mt-0.5" />
-              <Text className="text-sm text-gray-600 dark:text-gray-400 flex-1">
-                I agree to the <Text className="text-indigo-600 dark:text-indigo-400">Terms of Service</Text> and{" "}
-                <Text className="text-indigo-600 dark:text-indigo-400">Privacy Policy</Text>
-              </Text>
-            </View> */}
-
-            {/* Signup Button */}
-            <Pressable
-              onPress={handleSignup}
-              disabled={isLoading}
-              className={`py-3 rounded-lg items-center justify-center mt-4 ${
-                isLoading ? "bg-indigo-400" : "bg-indigo-600"
-              }`}
-            >
-              {isLoading ? (
-                <Text className="text-white font-medium">Creating Account...</Text>
+          {/* Profile Picture */}
+          <View style={{ alignItems: "center", marginBottom: 24 }}>
+            <TouchableOpacity onPress={pickImage} style={{ marginBottom: 8 }}>
+              {imageUri ? (
+                <Image source={{ uri: imageUri }} style={{ width: 80, height: 80, borderRadius: 40 }} />
               ) : (
-                <Text className="text-white font-medium">Create Account</Text>
+                <View
+                  style={{
+                    width: 80,
+                    height: 80,
+                    borderRadius: 40,
+                    backgroundColor: "#F3F4F6",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Feather name="user" size={32} color="#9CA3AF" />
+                </View>
               )}
-            </Pressable>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={pickImage}>
+              <Text style={{ color: "#6366F1", fontWeight: "500" }}>
+                {imageUri ? "Change Photo" : "Add Profile Photo"}
+              </Text>
+            </TouchableOpacity>
           </View>
 
-          {/* Divider */}
-          {/* <View className="flex-row items-center my-6">
-            <View className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
-            <Text className="mx-4 text-sm text-gray-500 dark:text-gray-400">or</Text>
-            <View className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
-          </View> */}
-
-          {/* Social Signup Buttons */}
-          {/* <View className="space-y-3">
-            <Pressable
-              onPress={() => Alert.alert("Social Signup", "Feature coming soon!")}
-              className="flex-row items-center justify-center py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg"
+          {/* Form Fields */}
+          <View style={{ marginBottom: 16 }}>
+            <Text style={{ fontSize: 14, fontWeight: "500", color: "#374151", marginBottom: 6 }}>Username</Text>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                borderWidth: 1,
+                borderColor: "#E5E7EB",
+                borderRadius: 8,
+                paddingHorizontal: 12,
+                backgroundColor: "#F9FAFB",
+              }}
             >
-              <Feather name="github" size={18} color="#333" />
-              <Text className="ml-2 text-gray-800 dark:text-white font-medium">Sign up with GitHub</Text>
-            </Pressable>
+              <Feather name="user" size={18} color="#9CA3AF" style={{ marginRight: 8 }} />
+              <TextInput
+                value={username}
+                onChangeText={setUsername}
+                placeholder="Your username"
+                placeholderTextColor="#9CA3AF"
+                style={{
+                  flex: 1,
+                  paddingVertical: 12,
+                  fontSize: 14,
+                  color: "#111827",
+                }}
+                autoCapitalize="none"
+              />
+            </View>
+          </View>
 
-            <Pressable
-              onPress={() => Alert.alert("Social Signup", "Feature coming soon!")}
-              className="flex-row items-center justify-center py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg"
+          <View style={{ marginBottom: 16 }}>
+            <Text style={{ fontSize: 14, fontWeight: "500", color: "#374151", marginBottom: 6 }}>Email</Text>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                borderWidth: 1,
+                borderColor: "#E5E7EB",
+                borderRadius: 8,
+                paddingHorizontal: 12,
+                backgroundColor: "#F9FAFB",
+              }}
             >
-              <Feather name="twitter" size={18} color="#1DA1F2" />
-              <Text className="ml-2 text-gray-800 dark:text-white font-medium">Sign up with Twitter</Text>
-            </Pressable>
-          </View> */}
+              <Feather name="mail" size={18} color="#9CA3AF" style={{ marginRight: 8 }} />
+              <TextInput
+                value={email}
+                onChangeText={setEmail}
+                placeholder="your@email.com"
+                placeholderTextColor="#9CA3AF"
+                style={{
+                  flex: 1,
+                  paddingVertical: 12,
+                  fontSize: 14,
+                  color: "#111827",
+                }}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+            </View>
+          </View>
+
+          <View style={{ marginBottom: 16 }}>
+            <Text style={{ fontSize: 14, fontWeight: "500", color: "#374151", marginBottom: 6 }}>Password</Text>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                borderWidth: 1,
+                borderColor: "#E5E7EB",
+                borderRadius: 8,
+                paddingHorizontal: 12,
+                backgroundColor: "#F9FAFB",
+              }}
+            >
+              <Feather name="lock" size={18} color="#9CA3AF" style={{ marginRight: 8 }} />
+              <TextInput
+                value={password}
+                onChangeText={setPassword}
+                placeholder="••••••••"
+                placeholderTextColor="#9CA3AF"
+                secureTextEntry={!showPassword}
+                style={{
+                  flex: 1,
+                  paddingVertical: 12,
+                  fontSize: 14,
+                  color: "#111827",
+                }}
+              />
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                <Feather name={showPassword ? "eye-off" : "eye"} size={18} color="#9CA3AF" />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <View style={{ marginBottom: 24 }}>
+            <Text style={{ fontSize: 14, fontWeight: "500", color: "#374151", marginBottom: 6 }}>Confirm Password</Text>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                borderWidth: 1,
+                borderColor: "#E5E7EB",
+                borderRadius: 8,
+                paddingHorizontal: 12,
+                backgroundColor: "#F9FAFB",
+              }}
+            >
+              <Feather name="lock" size={18} color="#9CA3AF" style={{ marginRight: 8 }} />
+              <TextInput
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                placeholder="••••••••"
+                placeholderTextColor="#9CA3AF"
+                secureTextEntry={!showPassword}
+                style={{
+                  flex: 1,
+                  paddingVertical: 12,
+                  fontSize: 14,
+                  color: "#111827",
+                }}
+              />
+            </View>
+          </View>
+
+          {/* Signup Button */}
+          <TouchableOpacity
+            onPress={handleSignup}
+            disabled={isLoading}
+            style={{
+              backgroundColor: isLoading ? "#818CF8" : "#6366F1",
+              borderRadius: 8,
+              paddingVertical: 14,
+              alignItems: "center",
+              marginBottom: 24,
+            }}
+          >
+            {isLoading ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Text style={{ color: "#FFFFFF", fontWeight: "600", fontSize: 16 }}>Create Account</Text>
+            )}
+          </TouchableOpacity>
 
           {/* Login Link */}
-          <View className="flex-row justify-center mt-8">
-            <Text className="text-gray-600 dark:text-gray-400">Already have an account?</Text>
-            <Pressable onPress={() => router.push("/login")} className="ml-1">
-              <Text className="text-indigo-600 dark:text-indigo-400 font-medium">Log in</Text>
-            </Pressable>
+          <View style={{ flexDirection: "row", justifyContent: "center" }}>
+            <Text style={{ color: "#6B7280" }}>Already have an account?</Text>
+            <TouchableOpacity onPress={() => router.push("/login")} style={{ marginLeft: 4 }}>
+              <Text style={{ color: "#6366F1", fontWeight: "500" }}>Log in</Text>
+            </TouchableOpacity>
           </View>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   )

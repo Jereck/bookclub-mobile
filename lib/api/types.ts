@@ -8,6 +8,7 @@ export interface User {
   booksRead: number;
   currentlyReading?: BookshelfEntry | null;
   onboarded: boolean;
+  profilePicture?: string | null;
 }
 
 // ─── Auth ──────────────────────────────────────────────────────────────────────

@@ -30,3 +30,51 @@ export const registerUser = async (username: string, email: string, password: st
 
   return await response.json();
 };
+
+export const getPresignedProfileUploadUrl = async (token: string): Promise<{ uploadUrl: string; key: string }> => {
+  const response = await fetch(`${apiURL}/user/profile-picture`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to get upload URL');
+  }
+
+  const { uploadUrl, key } = await response.json();
+  return { uploadUrl, key };
+};
+
+export const uploadProfilePicture = async (
+  uploadUrl: string,
+  file: Blob
+): Promise<void> => {
+  const res = await fetch(uploadUrl, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'image/jpeg'
+    },
+    body: file
+  });
+
+  if (!res.ok) {
+    throw new Error('Failed to upload image to S3');
+  }
+};
+
+export const getProfileImageUrl = async (token: string): Promise<string | null> => {
+  const response = await fetch(`${apiURL}/user/profile-image`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch profile image URL');
+  }
+
+  const { url } = await response.json();
+  return url;
+};

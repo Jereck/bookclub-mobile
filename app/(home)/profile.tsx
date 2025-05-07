@@ -8,11 +8,11 @@ import { useAppStore } from "@/store/store"
 import {
   getUserProfile,
   updateUser,
-  updateUserReadingGoal,
   getCurrentlyReadingBooks,
   getUserBookshelf,
   getBookClubInvites,
   acceptBookClubInvite,
+  getProfileImageUrl,
 } from "@/lib/api"
 import { useFocusEffect } from "expo-router"
 import { LinearGradient } from "expo-linear-gradient"
@@ -24,6 +24,7 @@ export default function ProfileTab() {
   const user = useAppStore((state) => state.user)
 
   const [profile, setProfile] = useState<User | null>(null)
+  const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const [readingGoal, setReadingGoal] = useState("")
   const [currentEntry, setCurrentEntry] = useState<BookshelfEntry | null>(null)
   const [currentlyReading, setCurrentlyReading] = useState<BookshelfEntry[]>([])
@@ -45,10 +46,11 @@ export default function ProfileTab() {
           setReadingGoal(String(profileData.readingGoal || 0))
           setCurrentEntry(profileData.currentlyReading)
 
-          const [books, reading] = await Promise.all([getUserBookshelf(token!), getCurrentlyReadingBooks(token!)])
+          const [books, reading, imageUrl] = await Promise.all([getUserBookshelf(token!), getCurrentlyReadingBooks(token!), getProfileImageUrl(token!)])
 
           setLibrary(books)
           setCurrentlyReading(reading)
+          setProfileImageUrl(imageUrl)
           loadInvites()
         } catch (err) {
           Alert.alert("Error", (err as Error).message)
@@ -138,7 +140,7 @@ export default function ProfileTab() {
         >
           <View className="w-24 h-24 rounded-full bg-white/20 backdrop-blur-lg mb-4 overflow-hidden border-2 border-white/30">
             <View className="w-full h-full items-center justify-center">
-              <Feather name="user" size={40} color="#ffffff" />
+            <Image source={{ uri: profileImageUrl || "https://via.placeholder.com/150" }} className="w-full h-full" resizeMode="cover" />
             </View>
           </View>
           <Text className="text-2xl font-bold text-white">{user?.username || "Reader"}</Text>
