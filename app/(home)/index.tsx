@@ -193,7 +193,6 @@ export default function HomeTab() {
         </View>
 
         {/* Recommended Books */}
-        {/* TODO: THIS WILL BE REPLACED WITH AI SUGGESTIONS */}
         <View className="px-4 pt-2 pb-4">
           <View className="flex-row justify-between items-center mb-4">
             <Text className="text-lg font-bold text-gray-900 dark:text-white">Recommended For You</Text>
@@ -237,14 +236,26 @@ export default function HomeTab() {
           )}
         </View>
 
-        <Modal isVisible={isModalVisible} onBackdropPress={closeModal} style={{ margin: 0 }}>
-          <View className="flex-1 justify-center items-center">
-            {selectedBook && (
-              <BookCard
-                book={selectedBook}
-                onClose={closeModal}
-              />
-            )}
+        <Modal
+          isVisible={isModalVisible}
+          onBackdropPress={closeModal}
+          style={{ margin: 0, justifyContent: "center", alignItems: "center" }}
+          animationIn="fadeIn"
+          animationOut="fadeOut"
+          backdropOpacity={0.5}
+          backdropTransitionOutTiming={0}
+          useNativeDriver={true}
+          statusBarTranslucent
+        >
+          <View
+            style={{
+              width: "100%",
+              justifyContent: "center",
+              alignItems: "center",
+              paddingHorizontal: 0,
+            }}
+          >
+            {selectedBook && <BookCard book={selectedBook} onClose={closeModal} />}
           </View>
         </Modal>
 

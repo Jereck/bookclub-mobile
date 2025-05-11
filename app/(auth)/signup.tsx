@@ -3,7 +3,6 @@
 import { useState } from "react"
 import {
   View,
-  TextInput,
   Text,
   Alert,
   TouchableOpacity,
@@ -17,8 +16,10 @@ import { SafeAreaView } from "react-native-safe-area-context"
 import * as ImagePicker from "expo-image-picker"
 import { useRouter } from "expo-router"
 import { getPresignedProfileUploadUrl, registerUser } from "@/lib/api"
-import { Feather } from "@expo/vector-icons"
 import { useAppStore } from "@/store/store"
+import AuthHeader from "@/components/AuthHeader"
+import ProfileImagePicker from "@/components/ProfileImagePicker"
+import TextInputField from "@/components/TextInputField"
 
 const apiURL = process.env.EXPO_PUBLIC_API_URL
 
@@ -33,25 +34,6 @@ export default function SignupScreen() {
 
   const router = useRouter()
   const login = useAppStore((state) => state.login)
-
-  const pickImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
-    if (status !== "granted") {
-      Alert.alert("Permission required", "We need access to your photos to set a profile picture.")
-      return
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.7,
-      allowsEditing: true,
-      aspect: [1, 1],
-    })
-
-    if (!result.canceled && result.assets.length > 0) {
-      setImageUri(result.assets[0].uri)
-    }
-  }
 
   const validateForm = () => {
     if (!username || !email || !password || !confirmPassword) {
@@ -136,176 +118,31 @@ export default function SignupScreen() {
           contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 40 }}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Header */}
-          <View style={{ alignItems: "center", marginTop: 40, marginBottom: 30 }}>
-            <View
-              style={{
-                width: 60,
-                height: 60,
-                borderRadius: 16,
-                backgroundColor: "#EEF2FF",
-                alignItems: "center",
-                justifyContent: "center",
-                marginBottom: 16,
-              }}
-            >
-              <Feather name="book-open" size={30} color="#6366F1" />
-            </View>
-            <Text style={{ fontSize: 24, fontWeight: "700", color: "#111827", marginBottom: 4 }}>Create Account</Text>
-            <Text style={{ fontSize: 14, color: "#6B7280" }}>Join BookClub and start your reading journey</Text>
-          </View>
-
-          {/* Profile Picture */}
-          <View style={{ alignItems: "center", marginBottom: 24 }}>
-            <TouchableOpacity onPress={pickImage} style={{ marginBottom: 8 }}>
-              {imageUri ? (
-                <Image source={{ uri: imageUri }} style={{ width: 80, height: 80, borderRadius: 40 }} />
-              ) : (
-                <View
-                  style={{
-                    width: 80,
-                    height: 80,
-                    borderRadius: 40,
-                    backgroundColor: "#F3F4F6",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Feather name="user" size={32} color="#9CA3AF" />
-                </View>
-              )}
-            </TouchableOpacity>
-            <TouchableOpacity onPress={pickImage}>
-              <Text style={{ color: "#6366F1", fontWeight: "500" }}>
-                {imageUri ? "Change Photo" : "Add Profile Photo"}
-              </Text>
-            </TouchableOpacity>
-          </View>
+          <AuthHeader title="Create Account" subtitle="Join BookClub and start your reading journey" />
+          <ProfileImagePicker imageUri={imageUri} setImageUri={setImageUri} />
 
           {/* Form Fields */}
-          <View style={{ marginBottom: 16 }}>
-            <Text style={{ fontSize: 14, fontWeight: "500", color: "#374151", marginBottom: 6 }}>Username</Text>
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                borderWidth: 1,
-                borderColor: "#E5E7EB",
-                borderRadius: 8,
-                paddingHorizontal: 12,
-                backgroundColor: "#F9FAFB",
-              }}
-            >
-              <Feather name="user" size={18} color="#9CA3AF" style={{ marginRight: 8 }} />
-              <TextInput
-                value={username}
-                onChangeText={setUsername}
-                placeholder="Your username"
-                placeholderTextColor="#9CA3AF"
-                style={{
-                  flex: 1,
-                  paddingVertical: 12,
-                  fontSize: 14,
-                  color: "#111827",
-                }}
-                autoCapitalize="none"
-              />
-            </View>
-          </View>
+          <TextInputField label="Username" value={username} onChange={setUsername} placeholder="Your username" icon="user" />
+          <TextInputField label="Email" value={email} onChange={setEmail} placeholder="your@email.com" icon="mail" />
 
-          <View style={{ marginBottom: 16 }}>
-            <Text style={{ fontSize: 14, fontWeight: "500", color: "#374151", marginBottom: 6 }}>Email</Text>
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                borderWidth: 1,
-                borderColor: "#E5E7EB",
-                borderRadius: 8,
-                paddingHorizontal: 12,
-                backgroundColor: "#F9FAFB",
-              }}
-            >
-              <Feather name="mail" size={18} color="#9CA3AF" style={{ marginRight: 8 }} />
-              <TextInput
-                value={email}
-                onChangeText={setEmail}
-                placeholder="your@email.com"
-                placeholderTextColor="#9CA3AF"
-                style={{
-                  flex: 1,
-                  paddingVertical: 12,
-                  fontSize: 14,
-                  color: "#111827",
-                }}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-            </View>
-          </View>
-
-          <View style={{ marginBottom: 16 }}>
-            <Text style={{ fontSize: 14, fontWeight: "500", color: "#374151", marginBottom: 6 }}>Password</Text>
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                borderWidth: 1,
-                borderColor: "#E5E7EB",
-                borderRadius: 8,
-                paddingHorizontal: 12,
-                backgroundColor: "#F9FAFB",
-              }}
-            >
-              <Feather name="lock" size={18} color="#9CA3AF" style={{ marginRight: 8 }} />
-              <TextInput
-                value={password}
-                onChangeText={setPassword}
-                placeholder="••••••••"
-                placeholderTextColor="#9CA3AF"
-                secureTextEntry={!showPassword}
-                style={{
-                  flex: 1,
-                  paddingVertical: 12,
-                  fontSize: 14,
-                  color: "#111827",
-                }}
-              />
-              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                <Feather name={showPassword ? "eye-off" : "eye"} size={18} color="#9CA3AF" />
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <View style={{ marginBottom: 24 }}>
-            <Text style={{ fontSize: 14, fontWeight: "500", color: "#374151", marginBottom: 6 }}>Confirm Password</Text>
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                borderWidth: 1,
-                borderColor: "#E5E7EB",
-                borderRadius: 8,
-                paddingHorizontal: 12,
-                backgroundColor: "#F9FAFB",
-              }}
-            >
-              <Feather name="lock" size={18} color="#9CA3AF" style={{ marginRight: 8 }} />
-              <TextInput
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                placeholder="••••••••"
-                placeholderTextColor="#9CA3AF"
-                secureTextEntry={!showPassword}
-                style={{
-                  flex: 1,
-                  paddingVertical: 12,
-                  fontSize: 14,
-                  color: "#111827",
-                }}
-              />
-            </View>
-          </View>
+          <TextInputField
+            label="Password"
+            value={password}
+            onChange={setPassword}
+            placeholder="••••••••"
+            icon="lock"
+            secure={!showPassword}
+            showToggle
+            onToggleSecure={() => setShowPassword(!showPassword)}
+          />
+          <TextInputField
+            label="Confirm Password"
+            value={confirmPassword}
+            onChange={setConfirmPassword}
+            placeholder="••••••••"
+            icon="lock"
+            secure={!showPassword}
+          />
 
           {/* Signup Button */}
           <TouchableOpacity

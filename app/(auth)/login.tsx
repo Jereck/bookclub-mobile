@@ -6,7 +6,8 @@ import { SafeAreaView } from "react-native-safe-area-context"
 import { useRouter } from "expo-router"
 import { useAppStore } from "@/store/store"
 import { loginUser } from "@/lib/api"
-import { Feather } from "@expo/vector-icons"
+import TextInputField from "@/components/TextInputField"
+import AuthHeader from "@/components/AuthHeader"
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("")
@@ -38,54 +39,21 @@ export default function LoginScreen() {
     <SafeAreaView className="flex-1 bg-white dark:bg-gray-900">
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} className="flex-1 justify-center">
         <View className="px-8 py-12 w-full max-w-sm mx-auto">
-          {/* Logo and App Name */}
-          <View className="items-center mb-8">
-            <View className="w-20 h-20 bg-indigo-100 dark:bg-indigo-900 rounded-2xl items-center justify-center mb-4">
-              <Feather name="book-open" size={40} color="#6366f1" />
-            </View>
-            <Text className="text-2xl font-bold text-gray-900 dark:text-white">BookClub</Text>
-            <Text className="text-sm text-gray-500 dark:text-gray-400 mt-1">Connect through reading</Text>
-          </View>
+          <AuthHeader title="Book Club" subtitle="Connect through reading" />
 
           {/* Form */}
           <View className="space-y-6">
-            <View>
-              <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email</Text>
-              <View className="relative">
-                <View className="absolute left-3 top-2.5">
-                  <Feather name="mail" size={18} color="#9ca3af" />
-                </View>
-                <TextInput
-                  placeholder="your@email.com"
-                  value={email}
-                  onChangeText={setEmail}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg py-2.5 pl-10 pr-3 text-gray-900 dark:text-white w-full"
-                  placeholderTextColor="#9ca3af"
-                />
-              </View>
-            </View>
-
-            <View>
-              <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Password</Text>
-              <View className="relative">
-                <View className="absolute left-3 top-2.5">
-                  <Feather name="lock" size={18} color="#9ca3af" />
-                </View>
-                <TextInput
-                  placeholder="••••••••"
-                  value={password}
-                  secureTextEntry={!showPassword}
-                  onChangeText={setPassword}
-                  className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg py-2.5 pl-10 pr-10 text-gray-900 dark:text-white w-full"
-                  placeholderTextColor="#9ca3af"
-                />
-                <Pressable onPress={() => setShowPassword(!showPassword)} className="absolute right-3 top-2.5">
-                  <Feather name={showPassword ? "eye-off" : "eye"} size={18} color="#9ca3af" />
-                </Pressable>
-              </View>
-            </View>
+            <TextInputField label="Email" value={email} onChange={setEmail} placeholder="your@email.com" icon="mail" />
+              <TextInputField
+                label="Password"
+                value={password}
+                onChange={setPassword}
+                placeholder="••••••••"
+                icon="lock"
+                secure={!showPassword}
+                showToggle
+                onToggleSecure={() => setShowPassword(!showPassword)}
+              />
 
             <View className="items-end">
               <Pressable onPress={() => Alert.alert("Reset Password", "Feature coming soon!")}>
@@ -105,32 +73,6 @@ export default function LoginScreen() {
               )}
             </Pressable>
           </View>
-
-          {/* Divider */}
-          {/* <View className="flex-row items-center my-8">
-            <View className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
-            <Text className="mx-4 text-sm text-gray-500 dark:text-gray-400">or</Text>
-            <View className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
-          </View> */}
-
-          {/* Social Login Buttons */}
-          {/* <View className="space-y-4">
-            <Pressable
-              onPress={() => Alert.alert("Social Login", "Feature coming soon!")}
-              className="flex-row items-center justify-center py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg"
-            >
-              <Feather name="github" size={18} color="#333" />
-              <Text className="ml-2 text-gray-800 dark:text-white font-medium">Continue with GitHub</Text>
-            </Pressable>
-
-            <Pressable
-              onPress={() => Alert.alert("Social Login", "Feature coming soon!")}
-              className="flex-row items-center justify-center py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg"
-            >
-              <Feather name="twitter" size={18} color="#1DA1F2" />
-              <Text className="ml-2 text-gray-800 dark:text-white font-medium">Continue with Twitter</Text>
-            </Pressable>
-          </View> */}
 
           {/* Sign Up Link */}
           <View className="flex-row justify-center mt-8">
